@@ -1,2 +1,0 @@
-We are looking for a backend engineer with experience in Python, SQL, Docker, and AWS. 
-Knowledge of React is a plus.
