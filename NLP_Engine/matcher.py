@@ -1,57 +1,57 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load once
+
+# Load model once (very important)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def calculate_semantic_similarity(resume_text, job_text):
-    resume_embedding = model.encode(resume_text)
-    job_embedding = model.encode(job_text)
+def compute_semantic_score(job_text, resume_text):
+    job_embedding = model.encode([job_text])
+    resume_embedding = model.encode([resume_text])
 
-    similarity = cosine_similarity(
-        [resume_embedding],
-        [job_embedding]
-    )[0][0]
-
-    return round(float(similarity), 4)
+    similarity = cosine_similarity(job_embedding, resume_embedding)[0][0]
+    return float(similarity)
 
 
-def calculate_hybrid_score(
-    resume_text,
-    job_text,
-    resume_skills,
-    required_skills,
-    preferred_skills
-):
-    # Rule section
-    resume_set = set(resume_skills)
-    required_set = set(required_skills)
-    preferred_set = set(preferred_skills)
+def compute_rule_score(required_skills, resume_skills, skill_weights):
+    if not required_skills:
+        return 0.0, [], []
 
-    required_matches = resume_set & required_set
-    preferred_matches = resume_set & preferred_set
+    matched_required = required_skills.intersection(resume_skills)
+    missing_required = required_skills.difference(resume_skills)
 
-    required_missing = required_set - resume_set
-    preferred_missing = preferred_set - resume_set
+    total_weight = sum(skill_weights.get(skill, 1) for skill in required_skills)
+    matched_weight = sum(skill_weights.get(skill, 1) for skill in matched_required)
 
-    required_score = (len(required_matches) / len(required_set)) if required_set else 0
-    preferred_score = (len(preferred_matches) / len(preferred_set)) if preferred_set else 0
+    rule_score = matched_weight / total_weight if total_weight > 0 else 0
 
-    rule_score = (0.7 * required_score) + (0.3 * preferred_score)
+    return rule_score, list(matched_required), list(missing_required)
 
-    # Semantic section
-    semantic_score = calculate_semantic_similarity(resume_text, job_text)
+def match_resume_to_job(job_data, resume_data, semantic_weight=0.6, rule_weight=0.4):
+    job_text = job_data["text"]
+    required_skills = job_data["required_skills"]
 
-    # Hybrid
-    final_score = (0.6 * semantic_score) + (0.4 * rule_score)
+    resume_text = resume_data["text"]
+    resume_skills = resume_data["skills"]
+
+    # 1️⃣ Rule-based score
+    rule_score, matched_required, missing_required = compute_rule_score(
+        required_skills,
+        resume_skills,
+        job_data["skill_weights"]
+    )
+
+    # 2️⃣ Semantic score
+    semantic_score = compute_semantic_score(job_text, resume_text)
+
+    # 3️⃣ Hybrid final score
+    final_score = (semantic_weight * semantic_score) + (rule_weight * rule_score)
 
     return {
         "final_score": round(final_score, 4),
-        "semantic_score": semantic_score,
         "rule_score": round(rule_score, 4),
-        "matched_required_skills": list(required_matches),
-        "matched_preferred_skills": list(preferred_matches),
-        "missing_required_skills": list(required_missing),
-        "missing_preferred_skills": list(preferred_missing)
+        "semantic_score": round(semantic_score, 4),
+        "matched_required": matched_required,
+        "missing_required": missing_required
     }
