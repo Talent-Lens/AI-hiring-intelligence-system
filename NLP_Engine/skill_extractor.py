@@ -1,28 +1,57 @@
-skill_list = [
-    "python", "java", "javascript", "react", "nodejs",
-    "sql", "mongodb", "docker", "aws", "spring"
+import re
+
+
+# Canonical skills
+MASTER_SKILLS = [
+    "python",
+    "java",
+    "c++",
+    "machine learning",
+    "deep learning",
+    "nlp",
+    "sql",
+    "mongodb",
+    "react",
+    "node.js",
+    "django",
+    "flask",
+    "tensorflow",
+    "pytorch",
+    "aws",
+    "docker",
+    "kubernetes",
+    "git"
 ]
 
-skill_aliases = {
-    "node.js": "nodejs",
-    "node js": "nodejs",
-    "react js": "react",
-    "mongo db": "mongodb",
+
+# Alias mapping (variation → canonical)
+SKILL_ALIASES = {
+    "ml": "machine learning",
+    "natural language processing": "nlp",
+    "nodejs": "node.js",
+    "amazon web services": "aws",
+    "k8s": "kubernetes"
 }
 
 
-def normalize_skill(skill: str) -> str:
-    skill = skill.lower().strip()
-    return skill_aliases.get(skill, skill)
+def normalize_text(text):
+    return text.lower()
 
 
-def extract_skills(text: str):
-    text = text.lower()
+def extract_skills(text):
+    text = normalize_text(text)
     found_skills = set()
 
-    for skill in skill_list:
-        if skill in text:
-            normalized = normalize_skill(skill)
-            found_skills.add(normalized)
+    # 1️⃣ Detect canonical skills
+    for skill in MASTER_SKILLS:
+        pattern = r"\b" + re.escape(skill) + r"\b"
+        if re.search(pattern, text):
+            found_skills.add(skill)
 
-    return list(found_skills)
+    # 2️⃣ Detect aliases and convert to canonical
+    for alias, canonical in SKILL_ALIASES.items():
+        pattern = r"\b" + re.escape(alias) + r"\b"
+        if re.search(pattern, text):
+            found_skills.add(canonical)
+
+    return found_skills
