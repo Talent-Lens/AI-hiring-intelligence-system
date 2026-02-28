@@ -1,52 +1,52 @@
 import re
+from NLP_Engine.skill_extractor import extract_skills
 
-# You can later move this to skill_extractor.py or a config file
-MASTER_SKILLS = [
-    "python", "java", "c++", "machine learning", "deep learning",
-    "nlp", "sql", "mongodb", "react", "node.js", "django",
-    "flask", "tensorflow", "pytorch", "aws", "docker",
-    "kubernetes", "git", "linux"
+
+REQUIRED_KEYWORDS = [
+    "required",
+    "must have",
+    "must-have",
+    "requirements",
+    "mandatory",
+    "essential"
 ]
+SKILL_WEIGHTS = {
+    "python": 3,
+    "machine learning": 3,
+    "sql": 2,
+    "aws": 2,
+    "docker": 1,
+    "git": 1
+}
 
 
-def extract_skills(text):
-    text = text.lower()
-    extracted = []
-
-    for skill in MASTER_SKILLS:
-        if skill.lower() in text:
-            extracted.append(skill)
-
-    return list(set(extracted))
-
-
-def parse_job_description(job_path):
-    with open(job_path, "r", encoding="utf-8") as f:
+def parse_job_description(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
 
-    text_lower = text.lower()
+    lower_text = text.lower()
 
-    # Basic rule-based separation
-    required_section = ""
-    preferred_section = ""
+    # 1️⃣ Extract all skills from entire job description
+    all_skills = extract_skills(text)
 
-    required_match = re.search(r"(required skills:)(.*?)(preferred skills:|$)", text_lower, re.DOTALL)
-    preferred_match = re.search(r"(preferred skills:)(.*)", text_lower, re.DOTALL)
+    required_skills = set()
 
-    if required_match:
-        required_section = required_match.group(2)
+    # 2️⃣ Try to detect required sections
+    for keyword in REQUIRED_KEYWORDS:
+        pattern = keyword + r"(.*?)(\n\n|$)"
+        matches = re.findall(pattern, lower_text, re.DOTALL)
 
-    if preferred_match:
-        preferred_section = preferred_match.group(2)
+        for match in matches:
+            section_text = match[0]
+            required_skills.update(extract_skills(section_text))
 
-    required_skills = extract_skills(required_section if required_section else text_lower)
+    # 3️⃣ Fallback if no required section detected
     if not required_skills:
-        required_skills = extract_skills(text_lower)
+        required_skills = all_skills
 
-    preferred_skills = extract_skills(preferred_section)
-    
     return {
-        "text": text_lower,
+        "text": text,
+        "all_skills": all_skills,
         "required_skills": required_skills,
-        "preferred_skills": preferred_skills
+        "skill_weights":SKILL_WEIGHTS
     }
