@@ -1,5 +1,5 @@
 from NLP_Engine.job_parser import parse_job_description
-from NLP_Engine.resume_parser import parse_resume
+from NLP_Engine.parsers.resume_parser import parse_resume
 from NLP_Engine.matcher import match_resume_to_job
 
 
