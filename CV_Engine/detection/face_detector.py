@@ -3,11 +3,13 @@ import os
 
 class FaceDetector:
     def __init__(self):
-        cascade_path = os.path.join(
-            os.path.dirname(__file__),
-            "haarcascade_frontalface_default.xml"
-        )
-        self.face_cascade = cv2.CascadeClassifier(cascade_path)
+        base_path = os.path.dirname(__file__)
+
+        face_path = os.path.join(base_path, "haarcascade_frontalface_default.xml")
+        eye_path = os.path.join(base_path, "haarcascade_eye.xml")
+
+        self.face_cascade = cv2.CascadeClassifier(face_path)
+        self.eye_cascade = cv2.CascadeClassifier(eye_path)
 
     def detect_faces(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -17,4 +19,14 @@ class FaceDetector:
             scaleFactor=1.3,
             minNeighbors=5
         )
-        return faces
+
+        return faces, gray
+
+    def detect_eyes(self, gray_face_region):
+        eyes = self.eye_cascade.detectMultiScale(
+            gray_face_region,
+            scaleFactor=1.1,
+            minNeighbors=5
+        )
+
+        return eyes
