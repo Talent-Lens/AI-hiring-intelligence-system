@@ -47,6 +47,21 @@ def match_resume_to_job(job_data, resume_data, semantic_weight=0.6, rule_weight=
 
     # 3️⃣ Hybrid final score
     final_score = (semantic_weight * semantic_score) + (rule_weight * rule_score)
+    # -------- Mandatory Skill Penalty --------
+
+    mandatory_missing = [
+        skill for skill in missing_required
+        if job_data["skill_weights"].get(skill, 0) == 3
+]
+    total_mandatory = [
+        skill for skill, weight in job_data["skill_weights"].items()
+        if weight == 3
+]
+
+    if total_mandatory:
+        penalty_ratio = len(mandatory_missing) / len(total_mandatory)
+        final_score *= (1 - 0.5 * penalty_ratio)
+    
 
     return {
         "final_score": round(final_score, 4),
