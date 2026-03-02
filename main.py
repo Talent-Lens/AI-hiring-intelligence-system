@@ -1,10 +1,18 @@
-from NLP_Engine.skill_extractor import extract_skills
-from NLP_Engine.matcher import match_resume_to_job
+import os
 
+from NLP_Engine.skill_extractor import nlp
+from NLP_Engine.parsers.resume_parser import parse_resume
+from NLP_Engine.matcher import match_resume_to_job
+from NLP_Engine.skill_extractor import extract_skills
+
+
+# --------------------------------------------------
+# BUILD JOB DATA WITH WEIGHTED REQUIRED DETECTION
+# --------------------------------------------------
 
 def build_job_data(job_text: str):
-    from NLP_Engine.skill_extractor import nlp
     doc = nlp(job_text)
+
     required_skills = set()
     skill_weights = {}
 
@@ -15,7 +23,7 @@ def build_job_data(job_text: str):
         if not sentence_skills:
             continue
 
-        # 🔥 Detect importance level
+        # Weight detection
         if any(keyword in sentence_text for keyword in ["must", "required", "mandatory"]):
             weight = 3
         elif any(keyword in sentence_text for keyword in ["preferred", "nice to have", "plus"]):
@@ -34,17 +42,13 @@ def build_job_data(job_text: str):
     }
 
 
-def build_resume_data(resume_text: str):
-    resume_skills = set(extract_skills(resume_text))
+# --------------------------------------------------
+# MAIN EXECUTION
+# --------------------------------------------------
 
-    return {
-        "text": resume_text,
-        "skills": resume_skills
-    }
+def main():
 
-
-if __name__ == "__main__":
-
+    # -------- JOB INPUT --------
     job_text = """
     We are looking for a Machine Learning Engineer.
     Python and SQL are required.
@@ -52,20 +56,56 @@ if __name__ == "__main__":
     Knowledge of NLP is preferred.
     """
 
-    resume_text = """
-    Experienced in Python, ML, ReactJS, Docker .
-    Built NLP pipelines using  deep learning.
-    Worked with SQL and MongoDB.
-    """
-
     job_data = build_job_data(job_text)
-    resume_data = build_resume_data(resume_text)
 
-    result = match_resume_to_job(job_data, resume_data)
+    # -------- RESUME FOLDER --------
+    resume_folder = "resumes"
 
-    print("\n===== MATCH RESULT =====\n")
-    print("Final Score:", result["final_score"])
-    print("Rule Score:", result["rule_score"])
-    print("Semantic Score:", result["semantic_score"])
-    print("Matched Required:", result["matched_required"])
-    print("Missing Required:", result["missing_required"])
+    if not os.path.exists(resume_folder):
+        print(f"Resume folder '{resume_folder}' not found.")
+        return
+
+    results = []
+
+    for filename in os.listdir(resume_folder):
+        if filename.lower().endswith(".pdf"):
+            file_path = os.path.join(resume_folder, filename)
+
+            try:
+                resume_data = parse_resume(file_path)
+                match_result = match_resume_to_job(job_data, resume_data)
+
+                results.append({
+                    "filename": filename,
+                    "final_score": match_result["final_score"],
+                    "rule_score": match_result["rule_score"],
+                    "semantic_score": match_result["semantic_score"],
+                    "matched_required": match_result["matched_required"],
+                    "missing_required": match_result["missing_required"]
+                })
+
+            except Exception as e:
+                print(f"Error processing {filename}: {e}")
+
+    if not results:
+        print("No valid resumes found.")
+        return
+
+    # -------- SORT BY FINAL SCORE --------
+    results.sort(key=lambda x: x["final_score"], reverse=True)
+
+    # -------- PRINT RANKED RESULTS --------
+    print("\n===== RANKED CANDIDATES =====\n")
+
+    for rank, result in enumerate(results, start=1):
+        print(f"Rank #{rank}: {result['filename']}")
+        print(f"  Final Score: {result['final_score']:.4f}")
+        print(f"  Rule Score: {result['rule_score']:.4f}")
+        print(f"  Semantic Score: {result['semantic_score']:.4f}")
+        print(f"  Matched Required: {result['matched_required']}")
+        print(f"  Missing Required: {result['missing_required']}")
+        print("-" * 60)
+
+
+if __name__ == "__main__":
+    main()

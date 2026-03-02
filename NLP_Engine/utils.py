@@ -6,8 +6,11 @@ def extract_text_from_pdf(path: str) -> str:
     text = ""
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
-            text += page.extract_text() or ""
-    return text
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+
+    return clean_text(text)
 
 
 def clean_text(text: str) -> str:
