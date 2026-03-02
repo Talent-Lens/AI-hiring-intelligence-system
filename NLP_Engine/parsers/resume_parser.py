@@ -1,16 +1,17 @@
 from NLP_Engine.skill_extractor import extract_skills
+from NLP_Engine.utils import extract_text_from_pdf
 
 
-def parse_resume(file_path):
+def parse_resume(file_path: str):
     """
-    Reads resume text file and extracts skills.
-    Returns structured dictionary used by matcher.
+    Parses a resume PDF and returns structured data.
     """
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        text = f.read()
+    # Extract text from PDF
+    text = extract_text_from_pdf(file_path)
 
-    skills = extract_skills(text)
+    # Extract normalized skills
+    skills = set(extract_skills(text))
 
     return {
         "text": text,
