@@ -1,57 +1,47 @@
-import re
+import spacy
+from spacy.matcher import PhraseMatcher
 
+# Load model once
+nlp = spacy.load("en_core_web_sm")
 
-# Canonical skills
-MASTER_SKILLS = [
-    "python",
-    "java",
-    "c++",
-    "machine learning",
-    "deep learning",
-    "nlp",
-    "sql",
-    "mongodb",
-    "react",
-    "node.js",
-    "django",
-    "flask",
-    "tensorflow",
-    "pytorch",
-    "aws",
-    "docker",
-    "kubernetes",
-    "git"
-]
-
-
-# Alias mapping (variation → canonical)
-SKILL_ALIASES = {
-    "ml": "machine learning",
-    "natural language processing": "nlp",
-    "nodejs": "node.js",
-    "amazon web services": "aws",
-    "k8s": "kubernetes"
+# Canonical skill dictionary (normalized form)
+SKILL_DB = {
+    "python": ["python"],
+    "machine learning": ["machine learning", "ml"],
+    "deep learning": ["deep learning", "dl"],
+    "natural language processing": ["nlp", "natural language processing"],
+    "c++": ["c++"],
+    "java": ["java"],
+    "sql": ["sql"],
+    "mongodb": ["mongodb"],
+    "react": ["react", "reactjs"],
+    "node.js": ["node.js", "nodejs"],
+    "django": ["django"],
+    "flask": ["flask"],
+    "tensorflow": ["tensorflow"],
+    "pytorch": ["pytorch"],
+    "aws": ["aws", "amazon web services"],
+    "docker": ["docker"],
+    "kubernetes": ["kubernetes"],
+    "git": ["git"]
 }
 
+# Build matcher
+matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
 
-def normalize_text(text):
-    return text.lower()
+for canonical, variations in SKILL_DB.items():
+    patterns = [nlp.make_doc(text) for text in variations]
+    matcher.add(canonical, patterns)
 
 
-def extract_skills(text):
-    text = normalize_text(text)
-    found_skills = set()
+def extract_skills(text: str):
+    doc = nlp(text)
+    matches = matcher(doc)
 
-    # 1️⃣ Detect canonical skills
-    for skill in MASTER_SKILLS:
-        pattern = r"\b" + re.escape(skill) + r"\b"
-        if re.search(pattern, text):
-            found_skills.add(skill)
+    extracted = set()
 
-    # 2️⃣ Detect aliases and convert to canonical
-    for alias, canonical in SKILL_ALIASES.items():
-        pattern = r"\b" + re.escape(alias) + r"\b"
-        if re.search(pattern, text):
-            found_skills.add(canonical)
+    for match_id, start, end in matches:
+        skill_name = nlp.vocab.strings[match_id]
+        extracted.add(skill_name)
 
-    return found_skills
+    return list(extracted)
