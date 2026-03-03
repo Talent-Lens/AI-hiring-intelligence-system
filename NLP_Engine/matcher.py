@@ -47,6 +47,12 @@ def match_resume_to_job(job_data, resume_data, semantic_weight=0.6, rule_weight=
 
     # 3️⃣ Hybrid final score
     final_score = (semantic_weight * semantic_score) + (rule_weight * rule_score)
+     # ---- EXPERIENCE BOOST ----
+    experience = resume_data.get("total_experience", 0)
+    experience_bonus = min(experience * 0.02, 0.1)
+
+    final_score += experience_bonus
+
     # -------- Mandatory Skill Penalty --------
 
     mandatory_missing = [

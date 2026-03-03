@@ -72,7 +72,7 @@ def main():
             file_path = os.path.join(resume_folder, filename)
 
             try:
-                resume_data = parse_resume(file_path)
+                resume_data = parse_resume(file_path , required_skills = job_data["required_skills"])
                 match_result = match_resume_to_job(job_data, resume_data)
 
                 results.append({
@@ -81,7 +81,9 @@ def main():
                     "rule_score": match_result["rule_score"],
                     "semantic_score": match_result["semantic_score"],
                     "matched_required": match_result["matched_required"],
-                    "missing_required": match_result["missing_required"]
+                    "missing_required": match_result["missing_required"],
+                    "total_experience": resume_data["total_experience"],
+                    "skill_experience": resume_data["skill_experience"],
                 })
 
             except Exception as e:
@@ -96,6 +98,7 @@ def main():
 
     # -------- PRINT RANKED RESULTS --------
     print("\n===== RANKED CANDIDATES =====\n")
+    
 
     for rank, result in enumerate(results, start=1):
         print(f"Rank #{rank}: {result['filename']}")
@@ -105,7 +108,8 @@ def main():
         print(f"  Matched Required: {result['matched_required']}")
         print(f"  Missing Required: {result['missing_required']}")
         print("-" * 60)
-
-
+        print(f"  Total Experience: {result['total_experience']} years")
+        print(f"  Skill Experience: {resume_data.get('skill_experience', {})}")
+   
 if __name__ == "__main__":
     main()
