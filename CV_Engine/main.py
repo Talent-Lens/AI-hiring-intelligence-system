@@ -18,6 +18,7 @@ def main():
 
     total_frames = 0
     eye_contact_frames = 0
+    correct_predictions=0
 
     prev_centers = None
 
@@ -40,24 +41,58 @@ def main():
 
             eyes = detector.detect_eyes(face_gray)
 
-            if len(eyes) >= 2:
-                centers = get_eye_centers(eyes)
+            eye_contact=False
 
-                if prev_centers is not None and len(prev_centers) == len(centers):
-                    movement = 0
-                    for (cx, cy), (px, py) in zip(centers, prev_centers):
-                        movement += abs(cx - px) + abs(cy - py)
+            for(ex,ey,ew,eh) in eyes:
+                eye_region=face_gray[ey:ey+eh, ex:ex+ew]
+                eye_color_region=face_color[ey:ey+eh, ex:ex+ew]
 
-                    # Threshold for gaze stability
-                    if movement < 20:
-                        eye_contact = True
+                
+                # Improve contrast
+                eye_region = cv2.equalizeHist(eye_region)
 
-                prev_centers = centers
+                #preprocess blur
+                blur= cv2.GaussianBlur(eye_region, (7,7), 0)
 
-            for (ex, ey, ew, eh) in eyes:
-                cv2.rectangle(face_color, (ex, ey), (ex+ew, ey+eh), (255, 0, 0), 2)
+                #Threshold for dark pupil
+                _, thresh=cv2.threshold(blur,40,255, cv2.THRESH_BINARY_INV)
+
+                contours,_= cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+
+                if contours:
+                    largest_contour= None
+                    max_area=0
+
+                    for cnt in contours:
+                        area=cv2.contourArea(cnt)
+
+                        if 30<area<(ew*eh*0.5):
+                            if area>max_area:
+                                max_area=area
+                                largest_contour=cnt
+                    if largest_contour is not None:
+                        if cv2.contourArea(largest_contour)>50:
+                            (px,py,pw,ph)=cv2.boundingRect(largest_contour)
+
+                            pupil_center_x=px+pw//2
+
+                            #draw pupil box
+                            cv2.rectangle(eye_color_region,(px,py),
+                                        (px+pw, py+ph), (0,0,255),1)
+                            
+                            #Eye center
+                            eye_center_x=ew//2
+
+                            #Check horizontal position
+                            if abs(pupil_center_x - eye_center_x)<ew * 0.3:
+                                eye_contact = True
 
         total_frames += 1
+        # Suppose you're testing "looking center"
+        ground_truth = "True"
+
+        if eye_contact == ground_truth:
+            correct_predictions += 1
         if eye_contact:
             eye_contact_frames += 1
 
@@ -73,10 +108,13 @@ def main():
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 255), 2)
 
         cv2.imshow("Interview Monitor", frame)
-
+        
         if cv2.waitKey(1) & 0xFF == 27:
             break
-
+            print("GT:", ground_truth, "Pred:", eye_contact)
+    if total_frames > 0:
+        accuracy = (correct_predictions / total_frames) * 100
+        print("Final Accuracy:", accuracy)
     cap.release()
     cv2.destroyAllWindows()
 
