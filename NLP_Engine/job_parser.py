@@ -1,4 +1,5 @@
 import re
+from NLP_Engine.skill_extractor import  normalize_skills
 
 # ----------------------------
 # CONFIG
@@ -58,6 +59,7 @@ def build_job_data(job_text: str):
     sentences = re.split(r"[.\n]", job_text_lower)
 
     required_skills = set()
+    required_skills = set(normalize_skills(required_skills))
     skill_weights = {}
 
     for skill in MASTER_SKILLS:
