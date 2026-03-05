@@ -1,7 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
-
+from NLP_Engine.skill_synonyms import normalize_skills
 # ----------------------------
 # LOAD MODEL (Singleton)
 # ----------------------------
@@ -61,10 +61,11 @@ def match_resume_to_job(
         raise ValueError("semantic_weight + rule_weight must equal 1.0")
 
     job_text = job_data["text"]
-    required_skills = job_data["required_skills"]
+    required_skills = set(normalize_skills(job_data["required_skills"]))
 
     resume_text = resume_data["text"]
-    resume_skills = resume_data["skills"]
+    resume_skills = set(normalize_skills(resume_data["skills"]))
+
 
     # 1️⃣ Rule Score
     rule_score, matched_required, missing_required = compute_rule_score(
@@ -117,14 +118,18 @@ def match_resume_to_job(
 
     final_score = (pre_penalty_score * penalty_multiplier)
     # ---------------- MATCH CATEGORY ----------------
-    if final_score >= 60:
+    
+    
+
+    if final_score >= 0.75:
         category = "Strong Match"
-    elif final_score >= 40:
+    elif final_score >= 0.50:
         category = "Moderate Match"
-    elif final_score >= 20:
-        category = "Weak Match"  
+    elif final_score >= 0.30:
+        category = "Weak Match"
     else:
-        category = "Very Weak Match"    
+        category = "Very Weak Match"
+    
     # ---------------- EXPLANATION METRICS ----------------
     mandatory_match_percentage = (
         (len(mandatory_skills) - len(mandatory_missing)) / len(mandatory_skills)
