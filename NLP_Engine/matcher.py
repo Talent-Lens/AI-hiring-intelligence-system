@@ -2,19 +2,32 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-# Load model once (very important)
+# ----------------------------
+# LOAD MODEL (Singleton)
+# ----------------------------
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
+# ----------------------------
+# SEMANTIC SCORE
+# ----------------------------
 def compute_semantic_score(job_text, resume_text):
-    job_embedding = model.encode([job_text])
-    resume_embedding = model.encode([resume_text])
+    job_embedding = model.encode(job_text, convert_to_tensor=False)
+    resume_embedding = model.encode(resume_text, convert_to_tensor=False)
 
-    similarity = cosine_similarity(job_embedding, resume_embedding)[0][0]
+    similarity = cosine_similarity(
+        [job_embedding],
+        [resume_embedding]
+    )[0][0]
+
     return float(similarity)
 
 
+# ----------------------------
+# RULE-BASED SCORE
+# ----------------------------
 def compute_rule_score(required_skills, resume_skills, skill_weights):
+
     if not required_skills:
         return 0.0, [], []
 
@@ -22,57 +35,119 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
     missing_required = required_skills.difference(resume_skills)
 
     total_weight = sum(skill_weights.get(skill, 1) for skill in required_skills)
+
+    if total_weight == 0:
+        return 0.0, list(matched_required), list(missing_required)
+
     matched_weight = sum(skill_weights.get(skill, 1) for skill in matched_required)
 
-    rule_score = matched_weight / total_weight if total_weight > 0 else 0
+    rule_score = matched_weight / total_weight
 
     return rule_score, list(matched_required), list(missing_required)
 
-def match_resume_to_job(job_data, resume_data, semantic_weight=0.6, rule_weight=0.4):
+
+# ----------------------------
+# MATCH FUNCTION
+# ----------------------------
+def match_resume_to_job(
+    job_data,
+    resume_data,
+    semantic_weight=0.3,
+    rule_weight=0.7
+):
+
+    # Safety check
+    if round(semantic_weight + rule_weight, 2) != 1.0:
+        raise ValueError("semantic_weight + rule_weight must equal 1.0")
+
     job_text = job_data["text"]
     required_skills = job_data["required_skills"]
 
     resume_text = resume_data["text"]
     resume_skills = resume_data["skills"]
 
-    # 1️⃣ Rule-based score
+    # 1️⃣ Rule Score
     rule_score, matched_required, missing_required = compute_rule_score(
         required_skills,
         resume_skills,
         job_data["skill_weights"]
     )
 
-    # 2️⃣ Semantic score
+    # 2️⃣ Semantic Score
     semantic_score = compute_semantic_score(job_text, resume_text)
 
-    # 3️⃣ Hybrid final score
-    final_score = (semantic_weight * semantic_score) + (rule_weight * rule_score)
-     # ---- EXPERIENCE BOOST ----
+    # 3️⃣ Hybrid Base Score
+    base_score = (semantic_weight * semantic_score) + \
+                 (rule_weight * rule_score)
+
+    # ---------------- EXPERIENCE BONUS ----------------
     experience = resume_data.get("total_experience", 0)
-    experience_bonus = min(experience * 0.02, 0.1)
+    experience_bonus = min(experience * 0.02, 0.2)
 
-    final_score += experience_bonus
+    pre_penalty_score = base_score + experience_bonus
 
-    # -------- Mandatory Skill Penalty --------
+    # ---------------- MANDATORY SKILL LOGIC ----------------
+    mandatory_skills = [
+        skill for skill, weight in job_data["skill_weights"].items()
+        if weight == 3
+    ]
 
     mandatory_missing = [
         skill for skill in missing_required
-        if job_data["skill_weights"].get(skill, 0) == 3
-]
-    total_mandatory = [
-        skill for skill, weight in job_data["skill_weights"].items()
-        if weight == 3
-]
+        if skill in mandatory_skills
+    ]
 
-    if total_mandatory:
-        penalty_ratio = len(mandatory_missing) / len(total_mandatory)
-        final_score *= (1 - 0.5 * penalty_ratio)
-    
+    # ✅ Mandatory Match Bonus
+    if mandatory_skills and len(mandatory_missing) == 0:
+        pre_penalty_score += 0.05
+
+    # ---------------- TIERED PENALTY SYSTEM ----------------
+    penalty_multiplier = 1.0
+
+    if mandatory_skills:
+        penalty_ratio = len(mandatory_missing) / len(mandatory_skills)
+
+        if penalty_ratio >= 0.70:
+            penalty_multiplier = 0.1   # Almost reject
+        elif penalty_ratio >= 0.5:
+            penalty_multiplier = 0.3   # Strong penalty
+        elif penalty_ratio > 0:
+            penalty_multiplier = 0.7   # Mild penalty
+
+    final_score = (pre_penalty_score * penalty_multiplier)
+    # ---------------- MATCH CATEGORY ----------------
+    if final_score >= 70:
+        category = "Strong Match"
+    elif final_score >= 50:
+        category = "Good Match"
+    elif final_score >= 30:
+        category = "Moderate Match"
+    elif final_score >= 15: 
+        category = "Weak Match"   
+    else:
+        category = "Very Weak Match"    
+    # ---------------- EXPLANATION METRICS ----------------
+    mandatory_match_percentage = (
+        (len(mandatory_skills) - len(mandatory_missing)) / len(mandatory_skills)
+        if mandatory_skills else 1
+    )
 
     return {
         "final_score": round(final_score, 4),
+        "base_score": round(base_score, 4),
+        "experience_bonus": round(experience_bonus, 4),
+        "pre_penalty_score": round(pre_penalty_score, 4),
         "rule_score": round(rule_score, 4),
         "semantic_score": round(semantic_score, 4),
         "matched_required": matched_required,
-        "missing_required": missing_required
+        "missing_required": missing_required,
+        "match_category": category,
+        "explanation": {
+            "semantic_contribution": round(semantic_weight * semantic_score, 4),
+            "rule_contribution": round(rule_weight * rule_score, 4),
+            "experience_bonus": round(experience_bonus, 4),
+            "mandatory_missing_count": len(mandatory_missing),
+            "mandatory_match_percentage": round(mandatory_match_percentage, 2),
+            "penalty_multiplier": round(penalty_multiplier, 4)
+        }
     }

@@ -7,7 +7,7 @@ from NLP_Engine.experience_extractor import (
 )
 
 
-def parse_resume(file_path: str, required_skills=None):
+def parse_resume(file_path: str, required_skills):
 
     text = extract_text_from_pdf(file_path)
     skills = set(extract_skills(text))

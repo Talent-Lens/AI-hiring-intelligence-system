@@ -1,54 +1,13 @@
 import os
 
-from NLP_Engine.skill_extractor import nlp
+from NLP_Engine.job_parser import build_job_data
 from NLP_Engine.parsers.resume_parser import parse_resume
 from NLP_Engine.matcher import match_resume_to_job
-from NLP_Engine.skill_extractor import extract_skills
 
-
-# --------------------------------------------------
-# BUILD JOB DATA WITH WEIGHTED REQUIRED DETECTION
-# --------------------------------------------------
-
-def build_job_data(job_text: str):
-    doc = nlp(job_text)
-
-    required_skills = set()
-    skill_weights = {}
-
-    for sent in doc.sents:
-        sentence_text = sent.text.lower()
-        sentence_skills = set(extract_skills(sent.text))
-
-        if not sentence_skills:
-            continue
-
-        # Weight detection
-        if any(keyword in sentence_text for keyword in ["must", "required", "mandatory"]):
-            weight = 3
-        elif any(keyword in sentence_text for keyword in ["preferred", "nice to have", "plus"]):
-            weight = 1
-        else:
-            weight = 2  # default medium importance
-
-        for skill in sentence_skills:
-            required_skills.add(skill)
-            skill_weights[skill] = weight
-
-    return {
-        "text": job_text,
-        "required_skills": required_skills,
-        "skill_weights": skill_weights
-    }
-
-
-# --------------------------------------------------
-# MAIN EXECUTION
-# --------------------------------------------------
 
 def main():
 
-    # -------- JOB INPUT --------
+    # ---------------- JOB INPUT ----------------
     job_text = """
     We are looking for a Machine Learning Engineer.
     Python and SQL are required.
@@ -56,9 +15,15 @@ def main():
     Knowledge of NLP is preferred.
     """
 
+    # Build structured job data
     job_data = build_job_data(job_text)
 
-    # -------- RESUME FOLDER --------
+    print("\n--- Job Skill Weights ---")
+    for skill, weight in job_data["skill_weights"].items():
+        print(f"{skill} : {weight}")
+    print("-------------------------\n")
+
+    # ---------------- RESUME FOLDER ----------------
     resume_folder = "resumes"
 
     if not os.path.exists(resume_folder):
@@ -67,49 +32,66 @@ def main():
 
     results = []
 
+    # ---------------- PROCESS RESUMES ----------------
     for filename in os.listdir(resume_folder):
-        if filename.lower().endswith(".pdf"):
-            file_path = os.path.join(resume_folder, filename)
+        if not filename.lower().endswith(".pdf"):
+            continue
 
-            try:
-                resume_data = parse_resume(file_path , required_skills = job_data["required_skills"])
-                match_result = match_resume_to_job(job_data, resume_data)
+        file_path = os.path.join(resume_folder, filename)
 
-                results.append({
-                    "filename": filename,
-                    "final_score": match_result["final_score"],
-                    "rule_score": match_result["rule_score"],
-                    "semantic_score": match_result["semantic_score"],
-                    "matched_required": match_result["matched_required"],
-                    "missing_required": match_result["missing_required"],
-                    "total_experience": resume_data["total_experience"],
-                    "skill_experience": resume_data["skill_experience"],
-                })
+        try:
+            resume_data = parse_resume(
+                file_path,
+                required_skills=job_data["required_skills"]
+            )
 
-            except Exception as e:
-                print(f"Error processing {filename}: {e}")
+            match_result = match_resume_to_job(job_data, resume_data)
+
+            results.append({
+                "filename": filename,
+                **match_result,
+                "total_experience": resume_data.get("total_experience", 0),
+                "skill_experience": resume_data.get("skill_experience", {})
+            })
+
+        except Exception as e:
+            print(f"Error processing {filename}: {e}")
 
     if not results:
         print("No valid resumes found.")
         return
 
-    # -------- SORT BY FINAL SCORE --------
+    # ---------------- SORT RESULTS ----------------
     results.sort(key=lambda x: x["final_score"], reverse=True)
 
-    # -------- PRINT RANKED RESULTS --------
+    # ---------------- DISPLAY RESULTS ----------------
     print("\n===== RANKED CANDIDATES =====\n")
-    
 
     for rank, result in enumerate(results, start=1):
+
         print(f"Rank #{rank}: {result['filename']}")
-        print(f"  Final Score: {result['final_score']:.4f}")
+        print(f"  Final Score: {result['final_score']*100:.2f}%")
+        print(f"  Category: {result['match_category']}")
+        print(f"  Base Score (Rule+Semantic): {result['base_score']:.4f}")
+        print(f"  Experience Bonus: {result['experience_bonus']:.4f}")
+        print(f"  Score Before Penalty: {result['pre_penalty_score']:.4f}")
         print(f"  Rule Score: {result['rule_score']:.4f}")
         print(f"  Semantic Score: {result['semantic_score']:.4f}")
         print(f"  Matched Required: {result['matched_required']}")
         print(f"  Missing Required: {result['missing_required']}")
-        print("-" * 60)
         print(f"  Total Experience: {result['total_experience']} years")
-        print(f"  Skill Experience: {resume_data.get('skill_experience', {})}")
-   
+        print(f"  Skill Experience: {result['skill_experience']}")
+
+        explanation = result.get("explanation", {})
+
+        print("  --- Explanation ---")
+        print(f"    Semantic Contribution: {explanation.get('semantic_contribution')}")
+        print(f"    Rule Contribution: {explanation.get('rule_contribution')}")
+        print(f"    Experience Bonus: {explanation.get('experience_bonus')}")
+        print(f"    Mandatory Missing Count: {explanation.get('mandatory_missing_count')}")
+        print(f"    Penalty Multiplier: {explanation.get('penalty_multiplier')}")
+        print("-" * 60)
+
+
 if __name__ == "__main__":
     main()
