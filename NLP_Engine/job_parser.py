@@ -1,52 +1,94 @@
 import re
-from NLP_Engine.skill_extractor import extract_skills
 
+# ----------------------------
+# CONFIG
+# ----------------------------
 
-REQUIRED_KEYWORDS = [
-    "required",
-    "must have",
-    "must-have",
-    "requirements",
-    "mandatory",
-    "essential"
+MASTER_SKILLS = [
+    "python",
+    "java",
+    "c++",
+    "machine learning",
+    "deep learning",
+    "nlp",
+    "sql",
+    "mongodb",
+    "react",
+    "node.js",
+    "django",
+    "flask",
+    "tensorflow",
+    "pytorch",
+    "aws",
+    "docker",
+    "kubernetes",
+    "git"
 ]
-SKILL_WEIGHTS = {
-    "python": 3,
-    "machine learning": 3,
-    "sql": 2,
-    "aws": 2,
-    "docker": 1,
-    "git": 1
-}
+
+MANDATORY_KEYWORDS = ["must", "required", "mandatory", "essential"]
+PREFERRED_KEYWORDS = ["preferred", "nice to have", "plus"]
+
+DEFAULT_WEIGHT = 2
+MANDATORY_WEIGHT = 3
+PREFERRED_WEIGHT = 1
 
 
-def parse_job_description(file_path):
-    with open(file_path, "r", encoding="utf-8") as f:
-        text = f.read()
+# ----------------------------
+# SKILL EXTRACTION
+# ----------------------------
 
-    lower_text = text.lower()
+def extract_skills(text: str):
+    text = text.lower()
+    extracted = []
 
-    # 1️⃣ Extract all skills from entire job description
-    all_skills = extract_skills(text)
+    for skill in MASTER_SKILLS:
+        pattern = r"\b" + re.escape(skill) + r"\b"
+        if re.search(pattern, text):
+            extracted.append(skill)
+
+    return extracted
+
+
+# ----------------------------
+# JOB PARSER
+# ----------------------------
+
+def build_job_data(job_text: str):
+    job_text_lower = job_text.lower()
+    sentences = re.split(r"[.\n]", job_text_lower)
 
     required_skills = set()
+    skill_weights = {}
 
-    # 2️⃣ Try to detect required sections
-    for keyword in REQUIRED_KEYWORDS:
-        pattern = keyword + r"(.*?)(\n\n|$)"
-        matches = re.findall(pattern, lower_text, re.DOTALL)
+    for skill in MASTER_SKILLS:
+        pattern = r"\b" + re.escape(skill) + r"\b"
+        frequency = len(re.findall(pattern, job_text_lower))
 
-        for match in matches:
-            section_text = match[0]
-            required_skills.update(extract_skills(section_text))
+        if frequency == 0:
+            continue
 
-    # 3️⃣ Fallback if no required section detected
-    if not required_skills:
-        required_skills = all_skills
+        required_skills.add(skill)
+
+        # Base weight from frequency
+        if frequency >= 4:
+            weight = 2.7
+        elif frequency >= 2:
+            weight = 2.4
+        else:
+            weight = DEFAULT_WEIGHT
+
+        # Check sentence-level importance override
+        for sentence in sentences:
+            if skill in sentence:
+                if any(keyword in sentence for keyword in MANDATORY_KEYWORDS):
+                    weight = MANDATORY_WEIGHT
+                elif any(keyword in sentence for keyword in PREFERRED_KEYWORDS):
+                    weight = max(weight, PREFERRED_WEIGHT)
+
+        skill_weights[skill] = weight
 
     return {
-        "text": text,
-        "all_skills": all_skills,
+        "text": job_text,
         "required_skills": required_skills,
-        "skill_weights":SKILL_WEIGHTS
+        "skill_weights": skill_weights
     }
