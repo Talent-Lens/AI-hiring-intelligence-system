@@ -7,22 +7,31 @@ import re
 
 from datetime import datetime
 
-
-MONTH_MAP = {
-    "january": 1, "february": 2, "march": 3,
-    "april": 4, "may": 5, "june": 6,
-    "july": 7, "august": 8, "september": 9,
-    "october": 10, "november": 11, "december": 12
-}
 def calculate_total_experience(text):
+    import re
+    from datetime import datetime
+
     current_year = datetime.now().year
-    
-    # Normalize different dash types to standard hyphen
+
     text = text.replace("–", "-").replace("—", "-")
-    
-    # Match patterns like: 2015 - 2020 OR 2015 - Present
+
+    # --- Extract only Work Experience section ---
+    work_section = ""
+
+    work_match = re.search(
+        r"(work experience|professional experience|employment history|internships?|experience)(.*?)(education|projects|skills|certifications|references|extracurricular|training|$)",
+        text,
+        re.IGNORECASE | re.DOTALL
+    )
+
+    if work_match:
+        work_section = work_match.group(2)
+    else:
+        # fallback if no section found
+        work_section = text
+
     pattern = r"(\d{4})\s*-\s*(\d{4}|present|Present)"
-    matches = re.findall(pattern, text)
+    matches = re.findall(pattern, work_section)
 
     total_years = 0
 
@@ -45,21 +54,29 @@ def calculate_total_experience(text):
 # SKILL-SPECIFIC EXPERIENCE
 # --------------------------------------------------
 
-def extract_skill_experience(text: str, required_skills):
-    """
-    Extracts experience duration for required skills only.
-    Returns dict: {skill: years}
-    """
-
+def extract_skill_experience(text, required_skills):
+    import re
+    
+    text = text.lower()
     skill_experience = {}
-    text_lower = text.lower()
 
     for skill in required_skills:
-        pattern = rf'(\d+)\+?\s*(?:years?|yrs?).{{0,20}}{re.escape(skill)}'
-        matches = re.findall(pattern, text_lower)
+        skill_lower = skill.lower()
+
+        # Escape special characters like +
+        skill_pattern = re.escape(skill_lower)
+
+        # Pattern examples:
+        # "3 years of python"
+        # "5 years python"
+        # "2+ years of machine learning"
+        pattern = rf'(\d+)\+?\s+years?\s+(of\s+)?{skill_pattern}'
+
+        matches = re.findall(pattern, text)
 
         if matches:
-            years = [int(m) for m in matches]
-            skill_experience[skill] = max(years)
+            # Take highest mentioned value if multiple
+            years = max(int(match[0]) for match in matches)
+            skill_experience[skill] = years
 
     return skill_experience
