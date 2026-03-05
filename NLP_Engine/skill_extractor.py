@@ -26,6 +26,28 @@ SKILL_DB = {
     "git": ["git"]
 }
 
+SKILL_SYNONYMS = {
+    "machine learning": ["ml"],
+    "natural language processing": ["nlp"],
+    "pytorch": ["torch"],
+    "tensorflow": ["tf"],
+    "javascript": ["js"],
+    "postgresql": ["postgres"],
+}
+def normalize_skills(skills):
+    normalized = set()
+
+    for skill in skills:
+        skill = skill.lower()
+
+        for canonical, synonyms in SKILL_SYNONYMS.items():
+            if skill == canonical or skill in synonyms:
+                normalized.add(canonical)
+                break
+        else:
+            normalized.add(skill)
+
+    return normalized
 # Build matcher
 matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
 
