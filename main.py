@@ -90,6 +90,13 @@ def main():
         print(f"    Experience Bonus: {explanation.get('experience_bonus')}")
         print(f"    Mandatory Missing Count: {explanation.get('mandatory_missing_count')}")
         print(f"    Penalty Multiplier: {explanation.get('penalty_multiplier')}")
+        
+        gap = result["skill_gap_analysis"]
+
+        print("  --- Skill Gap Analysis ---")
+        print("    Critical Gaps:", gap["critical_skill_gaps"])
+        print("    Moderate Gaps:", gap["moderate_skill_gaps"])
+        print("    Minor Gaps:", gap["minor_skill_gaps"])
         print("-" * 60)
 
 
