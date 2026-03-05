@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-
+from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 
 # ----------------------------
 # LOAD MODEL (Singleton)
@@ -72,6 +72,7 @@ def match_resume_to_job(
         resume_skills,
         job_data["skill_weights"]
     )
+    skill_gap = analyze_skill_gap(job_data, resume_data)
 
     # 2️⃣ Semantic Score
     semantic_score = compute_semantic_score(job_text, resume_text)
@@ -82,7 +83,7 @@ def match_resume_to_job(
 
     # ---------------- EXPERIENCE BONUS ----------------
     experience = resume_data.get("total_experience", 0)
-    experience_bonus = min(experience * 0.02, 0.2)
+    experience_bonus = min(experience * 0.02, 0.1)
 
     pre_penalty_score = base_score + experience_bonus
 
@@ -116,14 +117,12 @@ def match_resume_to_job(
 
     final_score = (pre_penalty_score * penalty_multiplier)
     # ---------------- MATCH CATEGORY ----------------
-    if final_score >= 70:
+    if final_score >= 60:
         category = "Strong Match"
-    elif final_score >= 50:
-        category = "Good Match"
-    elif final_score >= 30:
+    elif final_score >= 40:
         category = "Moderate Match"
-    elif final_score >= 15: 
-        category = "Weak Match"   
+    elif final_score >= 20:
+        category = "Weak Match"  
     else:
         category = "Very Weak Match"    
     # ---------------- EXPLANATION METRICS ----------------
@@ -141,6 +140,7 @@ def match_resume_to_job(
         "semantic_score": round(semantic_score, 4),
         "matched_required": matched_required,
         "missing_required": missing_required,
+        "skill_gap_analysis": skill_gap,
         "match_category": category,
         "explanation": {
             "semantic_contribution": round(semantic_weight * semantic_score, 4),
