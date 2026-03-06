@@ -2,6 +2,8 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 from NLP_Engine.skill_synonyms import normalize_skills
+from NLP_Engine.skill_similarity import find_semantic_skill_matches
+
 # ----------------------------
 # LOAD MODEL (Singleton)
 # ----------------------------
@@ -31,8 +33,20 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
     if not required_skills:
         return 0.0, [], []
 
-    matched_required = required_skills.intersection(resume_skills)
-    missing_required = required_skills.difference(resume_skills)
+    matched_required = list(required_skills.intersection(resume_skills))
+    missing_required = list(required_skills.difference(resume_skills))
+    
+    # ---------------- SEMANTIC SKILL MATCH ----------------
+
+    semantic_skill_matches = find_semantic_skill_matches(
+        missing_required,
+        resume_skills
+)
+
+    for req_skill, res_skill in semantic_skill_matches.items():
+        matched_required.append(req_skill)
+        if req_skill in missing_required:
+            missing_required.remove(req_skill)
 
     total_weight = sum(skill_weights.get(skill, 1) for skill in required_skills)
 
@@ -43,7 +57,7 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
 
     rule_score = matched_weight / total_weight
 
-    return rule_score, list(matched_required), list(missing_required)
+    return rule_score, list(matched_required), list(missing_required),semantic_skill_matches
 
 
 # ----------------------------
@@ -52,8 +66,8 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
 def match_resume_to_job(
     job_data,
     resume_data,
-    semantic_weight=0.3,
-    rule_weight=0.7
+    semantic_weight=0.4,
+    rule_weight=0.6
 ):
 
     # Safety check
@@ -66,15 +80,16 @@ def match_resume_to_job(
     resume_text = resume_data["text"]
     resume_skills = set(normalize_skills(resume_data["skills"]))
 
-
+    
     # 1️⃣ Rule Score
-    rule_score, matched_required, missing_required = compute_rule_score(
+    rule_score, matched_required, missing_required, semantic_skill_matches= compute_rule_score(
         required_skills,
         resume_skills,
         job_data["skill_weights"]
     )
     skill_gap = analyze_skill_gap(job_data, resume_data)
 
+    
     # 2️⃣ Semantic Score
     semantic_score = compute_semantic_score(job_text, resume_text)
 
@@ -84,7 +99,7 @@ def match_resume_to_job(
 
     # ---------------- EXPERIENCE BONUS ----------------
     experience = resume_data.get("total_experience", 0)
-    experience_bonus = min(experience * 0.02, 0.1)
+    experience_bonus = min(experience * 0.01, 0.15)
 
     pre_penalty_score = base_score + experience_bonus
 
@@ -109,12 +124,12 @@ def match_resume_to_job(
     if mandatory_skills:
         penalty_ratio = len(mandatory_missing) / len(mandatory_skills)
 
-        if penalty_ratio >= 0.70:
-            penalty_multiplier = 0.1   # Almost reject
+        if penalty_ratio >= 0.75:
+            penalty_multiplier = 0.4   # Almost reject
         elif penalty_ratio >= 0.5:
-            penalty_multiplier = 0.3   # Strong penalty
+            penalty_multiplier = 0.6  # Strong penalty
         elif penalty_ratio > 0:
-            penalty_multiplier = 0.7   # Mild penalty
+            penalty_multiplier = 0.8   # Mild penalty
 
     final_score = (pre_penalty_score * penalty_multiplier)
     # ---------------- MATCH CATEGORY ----------------
@@ -146,6 +161,7 @@ def match_resume_to_job(
         "matched_required": matched_required,
         "missing_required": missing_required,
         "skill_gap_analysis": skill_gap,
+        "semantic_skill_matches": semantic_skill_matches,
         "match_category": category,
         "explanation": {
             "semantic_contribution": round(semantic_weight * semantic_score, 4),
