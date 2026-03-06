@@ -26,7 +26,7 @@ def main():
         ret, frame = cap.read()
         if not ret:
             break
-
+        eye_detected = False
         frame = cv2.resize(frame, (640, 480))
 
         faces, gray = detector.detect_faces(frame)
@@ -41,9 +41,14 @@ def main():
 
             eyes = detector.detect_eyes(face_gray)
 
-            eye_contact=False
+            if len(eyes) > 0:
+                eye_detected = True
 
+
+            eye_contact=False
+            
             for(ex,ey,ew,eh) in eyes:
+                contact_count = 0
                 eye_region=face_gray[ey:ey+eh, ex:ex+ew]
                 eye_color_region=face_color[ey:ey+eh, ex:ex+ew]
 
@@ -66,7 +71,7 @@ def main():
                     for cnt in contours:
                         area=cv2.contourArea(cnt)
 
-                        if 30<area<(ew*eh*0.5):
+                        if 30<area<(ew*eh*0.3):
                             if area>max_area:
                                 max_area=area
                                 largest_contour=cnt
@@ -75,27 +80,36 @@ def main():
                             (px,py,pw,ph)=cv2.boundingRect(largest_contour)
 
                             pupil_center_x=px+pw//2
-
+                            pupil_center_y=py+ph//2
                             #draw pupil box
                             cv2.rectangle(eye_color_region,(px,py),
                                         (px+pw, py+ph), (0,0,255),1)
                             
                             #Eye center
                             eye_center_x=ew//2
-
+                            eye_center_y=eh//2
                             #Check horizontal position
-                            if abs(pupil_center_x - eye_center_x)<ew * 0.3:
-                                eye_contact = True
+                            if abs(pupil_center_x - eye_center_x)<ew * 0.12 and abs(pupil_center_y - eye_center_y)<eh * 0.12:
+                                contact_count += 1
+        if contact_count >=1:
+            eye_contact = True
+        else:
+            eye_contact = False
+        
+        ground_truth = True
 
-        total_frames += 1
-        # Suppose you're testing "looking center"
-        ground_truth = "True"
+        total_frames+=1
+        
+        if not eye_detected:
+            eye_contact=False
 
         if eye_contact == ground_truth:
-            correct_predictions += 1
+                correct_predictions += 1
+        
         if eye_contact:
             eye_contact_frames += 1
 
+        
         ratio = eye_contact_frames / total_frames if total_frames else 0
 
         status = f"Eye Contact Score: {int(ratio * 100)}%"
@@ -111,7 +125,6 @@ def main():
         
         if cv2.waitKey(1) & 0xFF == 27:
             break
-            print("GT:", ground_truth, "Pred:", eye_contact)
     if total_frames > 0:
         accuracy = (correct_predictions / total_frames) * 100
         print("Final Accuracy:", accuracy)
