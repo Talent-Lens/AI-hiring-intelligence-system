@@ -1,5 +1,7 @@
+from NLP_Engine.skill_synonym import normalize_skills
+
 def analyze_skill_gap(job_data, resume_data):
-    required_skills = job_data["required_skills"]
+    required_skills = set(normalize_skills(job_data["required_skills"]))
     skill_weights = job_data["skill_weights"]
 
     resume_skills = resume_data["skills"]

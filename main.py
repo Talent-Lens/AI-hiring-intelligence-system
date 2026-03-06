@@ -55,7 +55,9 @@ def main():
             })
 
         except Exception as e:
-            print(f"Error processing {filename}: {e}")
+            import traceback
+            print(f"\nError processing {filename}")
+            traceback.print_exc()
 
     if not results:
         print("No valid resumes found.")
@@ -79,6 +81,18 @@ def main():
         print(f"  Semantic Score: {result['semantic_score']:.4f}")
         print(f"  Matched Required: {result['matched_required']}")
         print(f"  Missing Required: {result['missing_required']}")
+        semantic_matches = result.get("semantic_skill_matches", {})
+        if semantic_matches:
+            print("  Semantic Skill Matches:")
+
+            if isinstance(semantic_matches, dict):
+                for req, res in semantic_matches.items():
+                    print(f"    {req} ← {res}")
+
+        elif isinstance(semantic_matches, list):
+            for match in semantic_matches:
+                print(f"    {match}")
+
         print(f"  Total Experience: {result['total_experience']} years")
         print(f"  Skill Experience: {result['skill_experience']}")
 
