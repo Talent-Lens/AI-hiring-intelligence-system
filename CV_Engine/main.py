@@ -32,7 +32,7 @@ def main():
         faces, gray = detector.detect_faces(frame)
 
         eye_contact = False
-
+        contact_count=0
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
@@ -55,7 +55,7 @@ def main():
                 
                 # Improve contrast
                 eye_region = cv2.equalizeHist(eye_region)
-
+                
                 #preprocess blur
                 blur= cv2.GaussianBlur(eye_region, (7,7), 0)
 
@@ -88,8 +88,9 @@ def main():
                             #Eye center
                             eye_center_x=ew//2
                             eye_center_y=eh//2
+
                             #Check horizontal position
-                            if abs(pupil_center_x - eye_center_x)<ew * 0.12 and abs(pupil_center_y - eye_center_y)<eh * 0.12:
+                            if abs(pupil_center_x - eye_center_x)<ew * 0.15 and abs(pupil_center_y - eye_center_y)<eh * 0.15:
                                 contact_count += 1
         if contact_count >=1:
             eye_contact = True
@@ -97,7 +98,6 @@ def main():
             eye_contact = False
         
         ground_truth = True
-
         total_frames+=1
         
         if not eye_detected:
