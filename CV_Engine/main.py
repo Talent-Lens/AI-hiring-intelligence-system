@@ -33,14 +33,36 @@ def main():
 
         eye_contact = False
         contact_count=0
+        forward_count = 0
+        left_count = 0
+        right_count = 0
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
+            eye_mid = 0
             face_gray = gray[y:y+h, x:x+w]
             face_color = frame[y:y+h, x:x+w]
 
             eyes = detector.detect_eyes(face_gray)
+            centers=get_eye_centers(eyes)
 
+            if len(centers) == 2:
+
+                eye_mid = (centers[0][0] + centers[1][0]) // 2
+                face_center_x = w // 2
+
+                diff = eye_mid - face_center_x
+
+                if diff>15:
+                    posture = "Looking Right"
+                    right_count+=1
+                elif diff<-15:
+                    posture = "Looking Left"
+                    left_count+=1
+                else:
+                    posture = "Forward"
+                    forward_count+=1
+                cv2.putText(frame, posture, (20, 120),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
             if len(eyes) > 0:
                 eye_detected = True
 
@@ -97,22 +119,21 @@ def main():
         else:
             eye_contact = False
         
-        ground_truth = True
+        
         total_frames+=1
         
         if not eye_detected:
             eye_contact=False
-
-        if eye_contact == ground_truth:
-                correct_predictions += 1
         
         if eye_contact:
             eye_contact_frames += 1
 
         
-        ratio = eye_contact_frames / total_frames if total_frames else 0
-
-        status = f"Eye Contact Score: {int(ratio * 100)}%"
+        ratio = (eye_contact_frames / total_frames)*100 if total_frames else 0
+        total_count=forward_count+left_count+right_count
+        forward_posture_percentage = (forward_count / total_count) * 100 if total_count else 0
+        
+        status = f"Eye Contact Score: {int(ratio)}%"
         state = "Eye Contact" if eye_contact else "Looking Away"
 
         cv2.putText(frame, status, (20, 40),
@@ -125,9 +146,11 @@ def main():
         
         if cv2.waitKey(1) & 0xFF == 27:
             break
-    if total_frames > 0:
-        accuracy = (correct_predictions / total_frames) * 100
-        print("Final Accuracy:", accuracy)
+    confidence_score= (
+            0.7*ratio+
+            0.3*forward_posture_percentage
+        )
+    print(f"confidence score: {confidence_score:.2f}/100")
     cap.release()
     cv2.destroyAllWindows()
 
