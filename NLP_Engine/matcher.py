@@ -31,7 +31,7 @@ def compute_semantic_score(job_text, resume_text):
 def compute_rule_score(required_skills, resume_skills, skill_weights):
 
     if not required_skills:
-        return 0.0, [], []
+        return 0.0, [], [] , {}
 
     matched_required = list(required_skills.intersection(resume_skills))
     missing_required = list(required_skills.difference(resume_skills))
@@ -51,7 +51,7 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
     total_weight = sum(skill_weights.get(skill, 1) for skill in required_skills)
 
     if total_weight == 0:
-        return 0.0, list(matched_required), list(missing_required)
+        return 0.0, list(matched_required), list(missing_required), semantic_skill_matches
 
     matched_weight = sum(skill_weights.get(skill, 1) for skill in matched_required)
 
@@ -75,7 +75,7 @@ def match_resume_to_job(
         raise ValueError("semantic_weight + rule_weight must equal 1.0")
 
     job_text = job_data["text"]
-    required_skills = set(normalize_skills(job_data["required_skills"]))
+    required_skills = set(normalize_skills(job_data["skill_weights"].keys()))
 
     resume_text = resume_data["text"]
     resume_skills = set(normalize_skills(resume_data["skills"]))
