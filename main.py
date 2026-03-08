@@ -9,11 +9,29 @@ def main():
 
     # ---------------- JOB INPUT ----------------
     job_text = """
-    We are looking for a Machine Learning Engineer.
-    Python and SQL are required.
-    Experience with AWS and PyTorch is mandatory.
-    Knowledge of NLP is preferred.
-    """
+   We are looking for a DevOps Engineer to manage infrastructure, automate deployments, and ensure system reliability.
+    Responsibilities
+    Build and maintain CI/CD pipelines
+    Manage cloud infrastructure
+    Automate deployment processes
+    Monitor system performance and reliability
+    Implement containerization and orchestration solutions
+    Required Skills
+    AWS
+    Docker
+    Kubernetes
+    CI/CD pipelines
+    Linux
+    Terraform
+    Git
+    Bash scripting
+    Preferred Skills
+    Prometheus
+    Grafana
+    Jenkins
+    Microservices architecture
+    Infrastructure as Code
+"""
 
     # Build structured job data
     job_data = build_job_data(job_text)

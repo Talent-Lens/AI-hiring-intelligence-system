@@ -34,17 +34,30 @@ SKILL_SYNONYMS = {
     "javascript": ["js"],
     "postgresql": ["postgres"],
 }
+
+CANONICAL_MAP = {}
+
+for canonical, synonyms in SKILL_SYNONYMS.items():
+    CANONICAL_MAP[canonical] = canonical
+    for syn in synonyms:
+        CANONICAL_MAP[syn] = canonical
+
 def normalize_skills(skills):
+
     normalized = set()
 
     for skill in skills:
-        skill = skill.lower()
+        skill = skill.lower().strip()
+
+        mapped = False
 
         for canonical, synonyms in SKILL_SYNONYMS.items():
             if skill == canonical or skill in synonyms:
                 normalized.add(canonical)
+                mapped = True
                 break
-        else:
+
+        if not mapped:
             normalized.add(skill)
 
     return normalized
