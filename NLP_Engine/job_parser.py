@@ -17,7 +17,11 @@ DEFAULT_WEIGHT = 2
 MANDATORY_WEIGHT = 3
 PREFERRED_WEIGHT = 1
 
-
+BLACKLIST_SKILLS = [
+    "experience",
+    "year",
+    "years"
+]
 # ----------------------------
 # SKILL EXTRACTION
 # ----------------------------
@@ -32,8 +36,15 @@ def extract_skills(text: str):
         pattern = r"\b" + re.escape(skill) + r"\b"
         if re.search(pattern, text):
             extracted.add(skill)
+    
+    # Remove blacklisted terms
+    extracted = {
+        skill for skill in extracted
+        if skill not in BLACKLIST_SKILLS
+    }        
 
     return list(extracted)
+
 
 
 # ----------------------------

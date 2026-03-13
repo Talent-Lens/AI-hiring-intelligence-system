@@ -54,29 +54,3 @@ def calculate_total_experience(text):
 # SKILL-SPECIFIC EXPERIENCE
 # --------------------------------------------------
 
-def extract_skill_experience(text, required_skills):
-    import re
-    
-    text = text.lower()
-    skill_experience = {}
-
-    for skill in required_skills:
-        skill_lower = skill.lower()
-
-        # Escape special characters like +
-        skill_pattern = re.escape(skill_lower)
-
-        # Pattern examples:
-        # "3 years of python"
-        # "5 years python"
-        # "2+ years of machine learning"
-        pattern = rf'(\d+)\+?\s+years?\s+(of\s+)?{skill_pattern}'
-
-        matches = re.findall(pattern, text)
-
-        if matches:
-            # Take highest mentioned value if multiple
-            years = max(int(match[0]) for match in matches)
-            skill_experience[skill] = years
-
-    return skill_experience

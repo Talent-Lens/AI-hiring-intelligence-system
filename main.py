@@ -3,34 +3,14 @@ import os
 from NLP_Engine.job_parser import build_job_data
 from NLP_Engine.parsers.resume_parser import parse_resume
 from NLP_Engine.matcher import match_resume_to_job
+from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 
 
 def main():
 
     # ---------------- JOB INPUT ----------------
     job_text = """
-   We are looking for a DevOps Engineer to manage infrastructure, automate deployments, and ensure system reliability.
-    Responsibilities
-    Build and maintain CI/CD pipelines
-    Manage cloud infrastructure
-    Automate deployment processes
-    Monitor system performance and reliability
-    Implement containerization and orchestration solutions
-    Required Skills
-    AWS
-    Docker
-    Kubernetes
-    CI/CD pipelines
-    Linux
-    Terraform
-    Git
-    Bash scripting
-    Preferred Skills
-    Prometheus
-    Grafana
-    Jenkins
-    Microservices architecture
-    Infrastructure as Code
+    Looking for a Machine Learning Engineer with  experience in Python, TensorFlow, Scikit-Learn , Deep Learning , and SQL.
 """
 
     # Build structured job data
@@ -64,12 +44,14 @@ def main():
             )
 
             match_result = match_resume_to_job(job_data, resume_data)
-
+            skill_gap = analyze_skill_gap(job_data, resume_data)
+            
+            
             results.append({
                 "filename": filename,
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
-                "skill_experience": resume_data.get("skill_experience", {})
+                "skill_gap_analysis": skill_gap
             })
 
         except Exception as e:
@@ -80,6 +62,7 @@ def main():
     if not results:
         print("No valid resumes found.")
         return
+
 
     # ---------------- SORT RESULTS ----------------
     results.sort(key=lambda x: x["final_score"], reverse=True)
@@ -112,7 +95,7 @@ def main():
                 print(f"    {match}")
 
         print(f"  Total Experience: {result['total_experience']} years")
-        print(f"  Skill Experience: {result['skill_experience']}")
+        
 
         explanation = result.get("explanation", {})
 
