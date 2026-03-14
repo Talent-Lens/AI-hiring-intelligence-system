@@ -17,11 +17,11 @@ DEFAULT_WEIGHT = 2
 MANDATORY_WEIGHT = 3
 PREFERRED_WEIGHT = 1
 
-BLACKLIST_SKILLS = [
+BLACKLIST_SKILLS = {
     "experience",
     "year",
     "years"
-]
+}
 # ----------------------------
 # SKILL EXTRACTION
 # ----------------------------
@@ -60,11 +60,13 @@ def build_job_data(job_text: str):
     phrases = extract_technical_phrases(job_text)
     sentences = re.split(r"[.\n]", job_text_lower)
 
-    extracted_skills = set(normalize_skills(extract_skills(job_text)))
+    extracted_skills = set(extract_skills(job_text))
     for phrase in phrases:
 
     # Skip very long phrases
         if len(phrase.split()) > 4:
+            continue
+        if phrase in BLACKLIST_SKILLS:
             continue
 
         extracted_skills.add(phrase)
