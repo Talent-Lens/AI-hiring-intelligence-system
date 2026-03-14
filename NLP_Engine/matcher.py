@@ -3,6 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 from NLP_Engine.skill_synonyms import normalize_skills
 from NLP_Engine.skill_similarity import find_semantic_skill_matches
+from NLP_Engine.candidate_insights import generate_candidate_insights
 
 # ----------------------------
 # LOAD MODEL (Singleton)
@@ -31,33 +32,43 @@ def compute_semantic_score(job_text, resume_text):
 def compute_rule_score(required_skills, resume_skills, skill_weights):
 
     if not required_skills:
-        return 0.0, [], [] , {}
+        return 0.0, [], [] , {} , 0
 
-    matched_required = list(required_skills.intersection(resume_skills))
-    missing_required = list(required_skills.difference(resume_skills))
-    
+    matched_required = required_skills.intersection(resume_skills)
+    missing_required = required_skills.difference(resume_skills)
+   
     # ---------------- SEMANTIC SKILL MATCH ----------------
 
     semantic_skill_matches = find_semantic_skill_matches(
         missing_required,
         resume_skills
 )
-
+    
     for req_skill, res_skill in semantic_skill_matches.items():
         matched_required.append(req_skill)
         if req_skill in missing_required:
             missing_required.remove(req_skill)
+    
+
+    total_required = len(required_skills)
+    if total_required > 0:
+        skill_coverage = len(matched_required) / total_required
+    else:
+        skill_coverage = 0    
+    matched_required = list(matched_required)
+    missing_required = list(missing_required)
 
     total_weight = sum(skill_weights.get(skill, 1) for skill in required_skills)
 
     if total_weight == 0:
-        return 0.0, list(matched_required), list(missing_required), semantic_skill_matches
+        return 0.0, list(matched_required), list(missing_required), semantic_skill_matches ,  skill_coverage
 
     matched_weight = sum(skill_weights.get(skill, 1) for skill in matched_required)
 
     rule_score = matched_weight / total_weight
+ 
 
-    return rule_score, list(matched_required), list(missing_required),semantic_skill_matches
+    return rule_score, list(matched_required), list(missing_required),semantic_skill_matches, skill_coverage
 
 
 # ----------------------------
@@ -75,17 +86,17 @@ def match_resume_to_job(
         raise ValueError("semantic_weight + rule_weight must equal 1.0")
 
     job_text = job_data["text"]
-    required_skills = set(normalize_skills(job_data["skill_weights"].keys()))
+    required_skills = set(normalize_skills(job_data["skill_weights"]))
 
     resume_text = resume_data["text"]
     resume_skills = set(normalize_skills(resume_data["skills"]))
 
     
     # 1️⃣ Rule Score
-    rule_score, matched_required, missing_required, semantic_skill_matches= compute_rule_score(
+    rule_score, matched_required, missing_required, semantic_skill_matches , skill_coverage = compute_rule_score(
         required_skills,
         resume_skills,
-        job_data["skill_weights"]
+        job_data["skill_weights"],
     )
     skill_gap = analyze_skill_gap(job_data, resume_data)
 
@@ -99,7 +110,7 @@ def match_resume_to_job(
 
     # ---------------- EXPERIENCE BONUS ----------------
     experience = resume_data.get("total_experience", 0)
-    experience_bonus = min(experience * 0.01, 0.15)
+    experience_bonus = min(experience * 0.005, 0.08)
 
     pre_penalty_score = base_score + experience_bonus
 
@@ -150,6 +161,12 @@ def match_resume_to_job(
         (len(mandatory_skills) - len(mandatory_missing)) / len(mandatory_skills)
         if mandatory_skills else 1
     )
+    
+    candidate_insights = generate_candidate_insights({
+        "rule_score": rule_score,
+        "semantic_score": semantic_score,
+        "missing_required": missing_required
+    })
 
     return {
         "final_score": round(final_score, 4),
@@ -160,8 +177,10 @@ def match_resume_to_job(
         "semantic_score": round(semantic_score, 4),
         "matched_required": matched_required,
         "missing_required": missing_required,
+        "skill_coverage": skill_coverage,
         "skill_gap_analysis": skill_gap,
         "semantic_skill_matches": semantic_skill_matches,
+        "candidate_insights": candidate_insights,
         "match_category": category,
         "explanation": {
             "semantic_contribution": round(semantic_weight * semantic_score, 4),

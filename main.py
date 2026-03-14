@@ -4,7 +4,7 @@ from NLP_Engine.job_parser import build_job_data
 from NLP_Engine.parsers.resume_parser import parse_resume
 from NLP_Engine.matcher import match_resume_to_job
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
-
+from NLP_Engine.explanation_engine import generate_candidate_insights   
 
 def main():
 
@@ -45,13 +45,16 @@ def main():
 
             match_result = match_resume_to_job(job_data, resume_data)
             skill_gap = analyze_skill_gap(job_data, resume_data)
+            insights = generate_candidate_insights(match_result, skill_gap)
             
-            
+           
             results.append({
                 "filename": filename,
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
-                "skill_gap_analysis": skill_gap
+                "skill_gap_analysis": skill_gap,
+                "insights": insights,
+                "skill_coverage": match_result["skill_coverage"] 
             })
 
         except Exception as e:
@@ -82,6 +85,7 @@ def main():
         print(f"  Semantic Score: {result['semantic_score']:.4f}")
         print(f"  Matched Required: {result['matched_required']}")
         print(f"  Missing Required: {result['missing_required']}")
+        print(f"  Skill Coverage: {result['skill_coverage']*100:.1f}%")
         semantic_matches = result.get("semantic_skill_matches", {})
         if semantic_matches:
             print("  Semantic Skill Matches:")
@@ -112,6 +116,21 @@ def main():
         print("    Critical Gaps:", gap["critical_skill_gaps"])
         print("    Moderate Gaps:", gap["moderate_skill_gaps"])
         print("    Minor Gaps:", gap["minor_skill_gaps"])
+        
+        insights = result["candidate_insights"]
+        print("  --- Candidate Insights ---")
+        print("    Strengths:")
+        for s in insights["strengths"]:
+            print(f"      - {s}")
+            
+        print("    Weaknesses:")
+        for w in insights["weaknesses"]:
+            print(f"      - {w}")
+            
+        print("    Recommendations:")
+        for r in insights["recommendations"]:
+            print(f"      - {r}")            
+        
         print("-" * 60)
 
 
