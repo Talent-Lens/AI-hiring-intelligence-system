@@ -45,9 +45,9 @@ def compute_rule_score(required_skills, resume_skills, skill_weights):
 )
     
     for req_skill, res_skill in semantic_skill_matches.items():
-        matched_required.append(req_skill)
+        matched_required.add(req_skill)
         if req_skill in missing_required:
-            missing_required.remove(req_skill)
+            missing_required.discard(req_skill)
     
 
     total_required = len(required_skills)
