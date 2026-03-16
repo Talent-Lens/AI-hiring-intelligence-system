@@ -11,7 +11,25 @@ MASTER_SKILLS = {
     "backend": {
         "node.js","express","django","flask","spring","spring boot","fastapi","laravel"
     },
-
+    "apis": {
+        "rest","rest api","restful api","graphql","grpc","soap","websocket"
+    },
+    "data_engineering": {
+        "spark","hadoop","airflow","kafka","flink","beam","databricks","etl","data pipeline"
+    },
+    "testing": {
+        "jest","mocha","chai","pytest","unittest","cypress","selenium","junit"
+    },
+    "architecture": {
+        "microservices","monolith","serverless","event driven architecture","service-oriented architecture","system design","scalability","distributed systems"
+    },
+    "data_science":{
+        "matplotlib","seaborn","plotly","ggplot","data visualization","data analysis","power bi","tableau"
+    },
+    "mobile":{
+        "android","ios","react native","flutter","xamarin","swiftui"
+    },
+    
     "databases": {
         "mysql","postgresql","mongodb","redis","sqlite","oracle","dynamodb"
     },
