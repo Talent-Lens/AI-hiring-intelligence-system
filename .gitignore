@@ -68,3 +68,5 @@ dist/
 
 #uploads
 uploads/
+samples/
+*.pdf
