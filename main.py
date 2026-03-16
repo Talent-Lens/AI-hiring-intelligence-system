@@ -10,14 +10,29 @@ def main():
 
     # ---------------- JOB INPUT ----------------
     job_text = """
-    Looking for a Machine Learning Engineer with  experience in Python, TensorFlow, Scikit-Learn , Deep Learning , and SQL.
+    Looking for a DevOps Engineer.
+    Required;
+    Docker
+    Kubernetes,
+    CI/CD,
+    AWS,
+    Linux
+    
+    Preferred:
+    Terraform
+    Prometheus
+    Grafana
 """
 
     # Build structured job data
     job_data = build_job_data(job_text)
 
     print("\n--- Job Skill Weights ---")
-    for skill, weight in job_data["skill_weights"].items():
+    for skill, weight in sorted(
+    job_data["skill_weights"].items(),
+    key=lambda x: x[1],
+    reverse = True
+    ):
         print(f"{skill} : {weight}")
     print("-------------------------\n")
 
@@ -45,6 +60,7 @@ def main():
 
             match_result = match_resume_to_job(job_data, resume_data)
             skill_gap = analyze_skill_gap(job_data, resume_data)
+            match_result["total_experience"] = resume_data.get("total_experience", 0)
             insights = generate_candidate_insights(match_result, skill_gap)
             
            
@@ -53,8 +69,7 @@ def main():
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
                 "skill_gap_analysis": skill_gap,
-                "insights": insights,
-                "skill_coverage": match_result["skill_coverage"] 
+                "candidate_insights": insights
             })
 
         except Exception as e:
@@ -132,6 +147,7 @@ def main():
             print(f"      - {r}")            
         
         print("-" * 60)
+    return results
 
 
 if __name__ == "__main__":
