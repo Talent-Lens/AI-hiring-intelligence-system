@@ -1,4 +1,4 @@
-from NLP_Engine.skill_synonym import normalize_skills
+from NLP_Engine.skill_synonyms import normalize_skills
 
 def analyze_skill_gap(job_data, resume_data):
 

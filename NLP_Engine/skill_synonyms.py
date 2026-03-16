@@ -5,11 +5,45 @@ SKILL_SYNONYMS = {
         "machine-learning",
         "machine learning models"
     ],
+    "deep learning": [
+        "dl"
+    ],
+    "computer vision": [
+        "cv",
+        "image processing",
+        "object detection"
+    ],
+    "javascript":["js"],
+    "typescript":["ts"],
+    "node.js":["node","nodejs"],
+    "spring boot":["sklearn","scikit-learn"],
+    "express":["express.js"],
+    "scikit-learn":["sklearn","scikit learn"],
+    "pytorch":["torch"],
+     # Databases
+    "postgresql": ["postgres", "psql"],
+    "mongodb": ["mongo"],
+    "mysql": ["my sql"],
+    
+    "kubernetes": ["k8s"],
+    "tfl": ["tensorflow"],
+
+    
+    "pandas": ["pd"],
+    "numpy": ["np"],
 
     "natural language processing": [
         "nlp",
         "text processing",
         "language models"
+    ],
+    
+    "ci/cd":[
+        "ci/cd pipelines",
+        "ci cd",
+        "ci/cd pipeline",
+        "continuous integration",
+        "continuous delivery",
     ],
 
     "python": [
