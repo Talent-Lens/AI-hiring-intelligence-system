@@ -10,7 +10,7 @@ def get_eye_centers(eyes):
         centers.append((cx, cy))
     return centers
 
-def analyze_camera(duration=20):
+def analyze_camera(question,duration=20):
     cap = cv2.VideoCapture(0)
     cap.set(3, 640)
     cap.set(4, 480)
