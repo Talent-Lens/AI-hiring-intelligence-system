@@ -1,6 +1,5 @@
 import re
 from NLP_Engine.skill_extractor import  normalize_skills
-from NLP_Engine.job_skill_extractor import extract_job_skills, generate_skill_weights
 from NLP_Engine.skill_db import ALL_SKILLS
 from NLP_Engine.phase_extractor import extract_technical_phrases
 
@@ -20,17 +19,65 @@ PREFERRED_WEIGHT = 1
 BLACKLIST_SKILLS = {
     "experience",
     "year",
-    "years"
+    "years",
+    "knowledge",
+    "skills",
+    "ability",
+    "abilities",
+    "responsibilities",
+    "responsible",
+    "work",
+    "job",
+    "role",
+    "project",
+    "team",
+    "projects",
+    "working",
+    "preferred",
+    "required",
 }
 # ----------------------------
 # SKILL EXTRACTION
 # ----------------------------
 
+def clean_job_text(text: str):
+
+    text = text.lower()
+    text = text.replace(","," ")
+    text = text.replace("/"," ")
+    text = text.replace("("," ")
+    text = text.replace(")"," ")
+
+    STOP_PHRASES = [
+        "strong experience",
+        "experience in",
+        "experience with",
+        "knowledge of",
+        "understanding of",
+        "familiar with"
+    ]
+
+    REMOVE_WORDS = [
+        "preferred",
+        "required",
+        "must",
+        "should",
+        "nice to have"
+    ]
+
+    for phrase in STOP_PHRASES:
+        text = text.replace(phrase, "")
+
+    for word in REMOVE_WORDS:
+        text = text.replace(word, "")
+
+    return text
+
 def extract_skills(text: str):
     text = text.lower()
     extracted = set()
 
-    normalized_skills = normalize_skills(ALL_SKILLS)
+    normalized_skills = sorted(normalize_skills(ALL_SKILLS), key=len, reverse=True)
 
     for skill in normalized_skills:
         pattern = r"\b" + re.escape(skill) + r"\b"
@@ -55,18 +102,27 @@ def extract_skills(text: str):
 
 def build_job_data(job_text: str):
 
-    job_text_lower = job_text.lower()
+    job_text_clean = clean_job_text(job_text)
+    job_text_lower = job_text_clean.lower()
     #Extract technical phrases using spacy
-    phrases = extract_technical_phrases(job_text)
+    phrases = extract_technical_phrases(job_text_clean)
     sentences = re.split(r"[.\n]", job_text_lower)
 
-    extracted_skills = set(extract_skills(job_text))
+    extracted_skills = set(extract_skills(job_text_clean))
     for phrase in phrases:
+        
+        words = phrase.split()
 
     # Skip very long phrases
-        if len(phrase.split()) > 4:
+        if len(words) > 2:
             continue
-        if phrase in BLACKLIST_SKILLS:
+        if any(word in BLACKLIST_SKILLS for word in words):
+            continue
+        # count how many known skills appear
+        skill_count = sum(1 for skill in ALL_SKILLS if skill in phrase)
+        if skill_count >= 1:
+            continue
+        if skill_count == 0:
             continue
 
         extracted_skills.add(phrase)
