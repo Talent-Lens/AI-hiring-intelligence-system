@@ -1,4 +1,5 @@
 import cv2
+import time
 from CV_Engine.detection.face_detector import FaceDetector
 
 def get_eye_centers(eyes):
@@ -9,7 +10,7 @@ def get_eye_centers(eyes):
         centers.append((cx, cy))
     return centers
 
-def main():
+def analyze_camera(duration=20):
     cap = cv2.VideoCapture(0)
     cap.set(3, 640)
     cap.set(4, 480)
@@ -21,11 +22,11 @@ def main():
     correct_predictions=0
 
     prev_centers = None
-
+    start_time = time.time()
     while True:
-        ret, frame = cap.read()
-        if not ret:
+        if time.time() - start_time > duration:
             break
+        ret, frame = cap.read()
         eye_detected = False
         frame = cv2.resize(frame, (640, 480))
 
@@ -68,9 +69,9 @@ def main():
 
 
             eye_contact=False
-            
+            contact_count = 0
             for(ex,ey,ew,eh) in eyes:
-                contact_count = 0
+                
                 eye_region=face_gray[ey:ey+eh, ex:ex+ew]
                 eye_color_region=face_color[ey:ey+eh, ex:ex+ew]
 
@@ -146,13 +147,20 @@ def main():
         
         if cv2.waitKey(1) & 0xFF == 27:
             break
-    confidence_score= (
-            0.7*ratio+
-            0.3*forward_posture_percentage
-        )
-    print(f"confidence score: {confidence_score:.2f}/100")
+    confidence_score = (
+        0.7 * ratio +
+        0.3 * forward_posture_percentage
+)
+
     cap.release()
     cv2.destroyAllWindows()
 
+    return {
+    "eye_contact_score": ratio,
+    "head_posture_score": forward_posture_percentage,
+    "confidence_score": confidence_score
+}
+
 if __name__ == "__main__":
-    main()
+    result= analyze_camera()
+    print(result)
