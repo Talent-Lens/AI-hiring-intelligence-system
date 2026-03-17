@@ -1,10 +1,10 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 import shutil
 import os
 import random
 
 from CV_Engine.main import analyze_camera
-# from NLP_Engine.resume_score import analyze_resume
+from main import process_resumes   
 
 app = FastAPI()
 
@@ -20,37 +20,49 @@ questions = [
 
 
 @app.post("/start-interview/")
-async def start_interview(resume: UploadFile = File(...)):
+async def start_interview(
+    resume: UploadFile = File(...),
+    job_text: str = Form(...)
+):
 
-    # Save resume
+    # ---------------- SAVE RESUME ----------------
     resume_path = os.path.join(UPLOAD_FOLDER, resume.filename)
 
     with open(resume_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
 
-    # Pick random question
+    # ---------------- QUESTION ----------------
     question = random.choice(questions)
 
-    print("Question for candidate:")
-    print(question)
+    # ---------------- CV ENGINE ----------------
+    cv_results = analyze_camera(question, 20)   
 
-    # Run CV engine (20 seconds camera analysis)
-    cv_results = analyze_camera(question,20)
+    # ---------------- NLP ENGINE ----------------
+    results = process_resumes(job_text, [resume_path])
 
-    # Run NLP resume scoring
-    # resume_score = analyze_resume(resume_path)
+    if not results:
+        return {"error": "Resume processing failed"}
 
-    resume_score = 75  # placeholder if NLP not connected yet
+    nlp_result = results[0]
 
+    # ---------------- FINAL SCORE ----------------
     confidence_score = cv_results["confidence_score"]
 
-    final_score = 0.6 * resume_score + 0.4 * confidence_score
+    
 
     return {
-        "question": question,
-        "resume_score": resume_score,
+    "question": question,
+
+    # -------- NLP FULL OUTPUT --------
+    "nlp_analysis": nlp_result,
+
+    # -------- CV OUTPUT --------
+    "cv_analysis": {
         "eye_contact_score": cv_results["eye_contact_score"],
         "head_posture_score": cv_results["head_posture_score"],
-        "confidence_score": confidence_score,
-        "final_candidate_score": final_score
-    }
+        "confidence_score": cv_results["confidence_score"]
+    },
+
+    # -------- FINAL SCORE --------
+    "final_candidate_score": 0.6 * nlp_result["final_score"] + 0.4 * cv_results["confidence_score"]
+}

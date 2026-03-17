@@ -6,52 +6,12 @@ from NLP_Engine.matcher import match_resume_to_job
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 from NLP_Engine.explanation_engine import generate_candidate_insights   
 
-def main():
-
-    # ---------------- JOB INPUT ----------------
-    job_text = """
-    Looking for a DevOps Engineer.
-    Required;
-    Docker
-    Kubernetes,
-    CI/CD,
-    AWS,
-    Linux
+def process_resumes(job_text: str, resume_files: list):
     
-    Preferred:
-    Terraform
-    Prometheus
-    Grafana
-"""
-
-    # Build structured job data
     job_data = build_job_data(job_text)
-
-    print("\n--- Job Skill Weights ---")
-    for skill, weight in sorted(
-    job_data["skill_weights"].items(),
-    key=lambda x: x[1],
-    reverse = True
-    ):
-        print(f"{skill} : {weight}")
-    print("-------------------------\n")
-
-    # ---------------- RESUME FOLDER ----------------
-    resume_folder = "resumes"
-
-    if not os.path.exists(resume_folder):
-        print(f"Resume folder '{resume_folder}' not found.")
-        return
-
     results = []
 
-    # ---------------- PROCESS RESUMES ----------------
-    for filename in os.listdir(resume_folder):
-        if not filename.lower().endswith(".pdf"):
-            continue
-
-        file_path = os.path.join(resume_folder, filename)
-
+    for file_path in resume_files:
         try:
             resume_data = parse_resume(
                 file_path,
@@ -60,12 +20,10 @@ def main():
 
             match_result = match_resume_to_job(job_data, resume_data)
             skill_gap = analyze_skill_gap(job_data, resume_data)
-            match_result["total_experience"] = resume_data.get("total_experience", 0)
             insights = generate_candidate_insights(match_result, skill_gap)
-            
-           
+
             results.append({
-                "filename": filename,
+                "filename": os.path.basename(file_path),
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
                 "skill_gap_analysis": skill_gap,
@@ -74,81 +32,13 @@ def main():
 
         except Exception as e:
             import traceback
-            print(f"\nError processing {filename}")
+            print(f"Error processing {file_path}")
             traceback.print_exc()
 
     if not results:
-        print("No valid resumes found.")
-        return
+        return []
 
-
-    # ---------------- SORT RESULTS ----------------
+    # sort
     results.sort(key=lambda x: x["final_score"], reverse=True)
 
-    # ---------------- DISPLAY RESULTS ----------------
-    print("\n===== RANKED CANDIDATES =====\n")
-
-    for rank, result in enumerate(results, start=1):
-
-        print(f"Rank #{rank}: {result['filename']}")
-        print(f"  Final Score: {result['final_score']*100:.2f}%")
-        print(f"  Category: {result['match_category']}")
-        print(f"  Base Score (Rule+Semantic): {result['base_score']:.4f}")
-        print(f"  Experience Bonus: {result['experience_bonus']:.4f}")
-        print(f"  Score Before Penalty: {result['pre_penalty_score']:.4f}")
-        print(f"  Rule Score: {result['rule_score']:.4f}")
-        print(f"  Semantic Score: {result['semantic_score']:.4f}")
-        print(f"  Matched Required: {result['matched_required']}")
-        print(f"  Missing Required: {result['missing_required']}")
-        print(f"  Skill Coverage: {result['skill_coverage']*100:.1f}%")
-        semantic_matches = result.get("semantic_skill_matches", {})
-        if semantic_matches:
-            print("  Semantic Skill Matches:")
-
-            if isinstance(semantic_matches, dict):
-                for req, res in semantic_matches.items():
-                    print(f"    {req} ← {res}")
-
-        elif isinstance(semantic_matches, list):
-            for match in semantic_matches:
-                print(f"    {match}")
-
-        print(f"  Total Experience: {result['total_experience']} years")
-        
-
-        explanation = result.get("explanation", {})
-
-        print("  --- Explanation ---")
-        print(f"    Semantic Contribution: {explanation.get('semantic_contribution')}")
-        print(f"    Rule Contribution: {explanation.get('rule_contribution')}")
-        print(f"    Experience Bonus: {explanation.get('experience_bonus')}")
-        print(f"    Mandatory Missing Count: {explanation.get('mandatory_missing_count')}")
-        print(f"    Penalty Multiplier: {explanation.get('penalty_multiplier')}")
-        
-        gap = result["skill_gap_analysis"]
-
-        print("  --- Skill Gap Analysis ---")
-        print("    Critical Gaps:", gap["critical_skill_gaps"])
-        print("    Moderate Gaps:", gap["moderate_skill_gaps"])
-        print("    Minor Gaps:", gap["minor_skill_gaps"])
-        
-        insights = result["candidate_insights"]
-        print("  --- Candidate Insights ---")
-        print("    Strengths:")
-        for s in insights["strengths"]:
-            print(f"      - {s}")
-            
-        print("    Weaknesses:")
-        for w in insights["weaknesses"]:
-            print(f"      - {w}")
-            
-        print("    Recommendations:")
-        for r in insights["recommendations"]:
-            print(f"      - {r}")            
-        
-        print("-" * 60)
     return results
-
-
-if __name__ == "__main__":
-    main()
