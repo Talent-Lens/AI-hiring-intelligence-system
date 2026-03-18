@@ -47,15 +47,18 @@ async def start_interview(
 
     # ---------------- FINAL SCORE ----------------
     confidence_score = cv_results["confidence_score"]
-
-    
+    final_candidate_score= 0.6*nlp_result["final_score"] + 0.4 * cv_results["confidence_score"]
+    if(final_candidate_score > 65):
+        hired=True
+    else:
+        hired=False
 
     return {
     "question": question,
 
     # -------- NLP FULL OUTPUT --------
     "nlp_analysis": nlp_result,
-
+    
     # -------- CV OUTPUT --------
     "cv_analysis": {
         "eye_contact_score": cv_results["eye_contact_score"],
@@ -64,5 +67,6 @@ async def start_interview(
     },
 
     # -------- FINAL SCORE --------
-    "final_candidate_score": 0.6 * nlp_result["final_score"] + 0.4 * cv_results["confidence_score"]
+    "final_candidate_score": 0.6 * nlp_result["final_score"] + 0.4 * cv_results["confidence_score"],
+    "hired": hired
 }
