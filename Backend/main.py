@@ -1,4 +1,5 @@
 import sys
+print("=== STARTING UP ===", flush=True)
 sys.path.append('/app')
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
