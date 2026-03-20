@@ -10,7 +10,7 @@ def get_eye_centers(eyes):
         centers.append((cx, cy))
     return centers
 
-def analyze_camera(question,duration=20):
+def analyze_camera(duration):
     cap = cv2.VideoCapture(0)
     cap.set(3, 640)
     cap.set(4, 480)
@@ -27,6 +27,10 @@ def analyze_camera(question,duration=20):
         if time.time() - start_time > duration:
             break
         ret, frame = cap.read()
+        
+        if not ret or frame is None:
+            continue  # or return default scores
+        frame = cv2.resize(frame, (640, 480))
         eye_detected = False
         frame = cv2.resize(frame, (640, 480))
 
@@ -142,9 +146,6 @@ def analyze_camera(question,duration=20):
 
         cv2.putText(frame, state, (20, 80),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 255), 2)
-
-        cv2.putText(frame, f"Question: {question}", (20, 440),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
         
         cv2.imshow("Interview Monitor", frame)
         
