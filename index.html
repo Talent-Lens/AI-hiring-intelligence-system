@@ -46,28 +46,11 @@
     }
     .logo { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; white-space: nowrap; }
     .logo span { color: var(--accent); }
-    .nav-url {
+    .nav-status {
       flex: 1; display: flex; align-items: center; gap: 8px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 7px 12px;
-      transition: border-color 0.2s; min-width: 0;
+      font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted);
     }
-    .nav-url:focus-within { border-color: rgba(200,255,87,0.35); }
-    .url-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: all 0.3s; }
-    .url-dot.ok  { background: var(--success); box-shadow: 0 0 6px var(--success); }
-    .url-dot.bad { background: var(--danger); }
-    .nav-url input {
-      flex: 1; min-width: 0; background: none; border: none; outline: none;
-      color: var(--text); font-family: var(--font-mono); font-size: 0.75rem;
-    }
-    .nav-url input::placeholder { color: var(--muted); }
-    .btn-ping {
-      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em;
-      padding: 5px 11px; border-radius: 6px; border: 1px solid var(--border);
-      background: var(--surface); color: var(--muted); cursor: pointer;
-      transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
-    }
-    .btn-ping:hover { border-color: var(--accent); color: var(--accent); }
+    .url-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); flex-shrink: 0; }
 
     .wrapper { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 24px; }
 
@@ -120,29 +103,17 @@
     .loading.show { display: flex; }
     .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-    /* NLP RESULTS PANEL (between step1 and step2) */
     #panel-nlp { display: none; }
     #panel-nlp.active { display: block; }
 
-    .match-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em;
-      padding: 6px 14px; border-radius: 20px; margin-bottom: 24px;
-      text-transform: uppercase;
-    }
+    .match-badge { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; padding: 6px 14px; border-radius: 20px; margin-bottom: 24px; text-transform: uppercase; }
     .match-badge.strong { background: rgba(87,255,170,0.12); border: 1px solid rgba(87,255,170,0.3); color: var(--success); }
     .match-badge.moderate { background: rgba(200,255,87,0.1); border: 1px solid rgba(200,255,87,0.3); color: var(--accent); }
     .match-badge.weak { background: rgba(255,124,87,0.1); border: 1px solid rgba(255,124,87,0.3); color: var(--accent3); }
     .match-badge.poor { background: rgba(255,87,87,0.08); border: 1px solid rgba(255,87,87,0.25); color: var(--danger); }
 
-    .nlp-scores-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px; margin-bottom: 28px;
-    }
-    .nlp-score-card {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 18px;
-    }
+    .nlp-scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .nlp-score-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
     .nlp-score-card .sc-label { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
     .nlp-score-card .sc-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; }
     .nlp-score-card .sc-sub { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); margin-top: 4px; }
@@ -150,10 +121,7 @@
     .skills-section { margin-bottom: 24px; }
     .skills-section h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
     .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-    .skill-tag {
-      font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.05em;
-      padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
-    }
+    .skill-tag { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.05em; padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
     .skill-tag.matched { background: rgba(87,255,170,0.1); border: 1px solid rgba(87,255,170,0.25); color: var(--success); }
     .skill-tag.missing { background: rgba(255,87,87,0.08); border: 1px solid rgba(255,87,87,0.2); color: var(--danger); }
     .skill-tag.semantic { background: rgba(87,200,255,0.1); border: 1px solid rgba(87,200,255,0.25); color: var(--accent2); }
@@ -182,7 +150,6 @@
     .score-bars-section { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
     .score-bars-section h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; margin-bottom: 18px; }
 
-    /* CAMERA */
     .question-card { background: linear-gradient(135deg, rgba(200,255,87,0.06), rgba(87,200,255,0.04)); border: 1px solid rgba(200,255,87,0.15); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
     .q-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
     .q-text { font-family: var(--font-body); font-size: 1.2rem; font-style: italic; font-weight: 300; line-height: 1.5; }
@@ -197,7 +164,6 @@
     .timer-display { font-family: var(--font-mono); font-size: 1.5rem; color: var(--accent); text-align: center; margin-bottom: 16px; display: none; }
     .timer-display.show { display: block; }
 
-    /* FINAL RESULTS */
     .verdict-box { border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 24px; }
     .verdict-box.hired { background: linear-gradient(135deg, rgba(87,255,170,0.1), rgba(200,255,87,0.08)); border: 1px solid rgba(87,255,170,0.25); }
     .verdict-box.rejected { background: linear-gradient(135deg, rgba(255,87,87,0.08), rgba(255,124,87,0.06)); border: 1px solid rgba(255,87,87,0.2); }
@@ -217,9 +183,7 @@
 
     .error-notice { background: rgba(255,87,87,0.08); border: 1px solid rgba(255,87,87,0.2); border-radius: 10px; padding: 14px 18px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--danger); display: none; margin-bottom: 16px; line-height: 1.55; }
     .error-notice.show { display: block; }
-
     .divider { height: 1px; background: var(--border); margin: 24px 0; }
-
     .footer-hint { text-align: center; padding: 40px 0 60px; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
 
     @media (max-width: 600px) {
@@ -240,14 +204,10 @@
   <nav>
     <div class="nav-inner">
       <div class="logo">Hire<span>Vision</span></div>
-      <div class="nav-url">
-        <div class="url-dot" id="urlDot"></div>
-        <input type="text" id="backendUrl"
-          placeholder="Paste your ngrok URL here…"
-          autocomplete="off" spellcheck="false"
-          onkeydown="if(event.key==='Enter') ping()"/>
+      <div class="nav-status">
+        <div class="url-dot"></div>
+        Connected to AI backend
       </div>
-      <button type="button" class="btn-ping" onclick="ping()">Connect</button>
     </div>
   </nav>
 
@@ -285,7 +245,6 @@
       <div class="panel-tag">Step 01 / Resume Analysis</div>
       <h2>Upload your resume</h2>
       <p class="panel-desc">We'll match your profile against the job description using NLP scoring.</p>
-
       <div class="field">
         <label>Resume File</label>
         <div class="file-drop" id="fileDrop" onclick="document.getElementById('resumeFile').click()">
@@ -295,12 +254,10 @@
         <input type="file" id="resumeFile" accept=".pdf,.doc,.docx"/>
         <div class="file-name" id="fileName"></div>
       </div>
-
       <div class="field">
         <label>Job Description</label>
         <textarea id="jobText" placeholder="Paste the full job description here…"></textarea>
       </div>
-
       <div class="error-notice" id="step1Error"></div>
       <div class="btn-row">
         <button type="button" class="btn btn-primary" id="analyzeBtn" onclick="submitResume()">Analyze Resume →</button>
@@ -313,87 +270,31 @@
       <div class="panel-tag">Step 02 / NLP Results</div>
       <h2>Resume analysis complete</h2>
       <p class="panel-desc">Here's how your resume stacks up against the job requirements.</p>
-
       <div id="matchBadge" class="match-badge weak">⚡ Weak Match</div>
-
-      <!-- Score cards -->
       <div class="nlp-scores-grid">
-        <div class="nlp-score-card">
-          <div class="sc-label">Final Score</div>
-          <div class="sc-val" id="nlpFinalScore">—</div>
-          <div class="sc-sub">/ 100</div>
-        </div>
-        <div class="nlp-score-card">
-          <div class="sc-label">Semantic Score</div>
-          <div class="sc-val" id="nlpSemanticScore">—</div>
-          <div class="sc-sub">/ 100</div>
-        </div>
-        <div class="nlp-score-card">
-          <div class="sc-label">Rule Score</div>
-          <div class="sc-val" id="nlpRuleScore">—</div>
-          <div class="sc-sub">/ 100</div>
-        </div>
-        <div class="nlp-score-card">
-          <div class="sc-label">Skill Coverage</div>
-          <div class="sc-val" id="nlpSkillCoverage">—</div>
-          <div class="sc-sub">% of required skills</div>
-        </div>
-        <div class="nlp-score-card">
-          <div class="sc-label">Experience</div>
-          <div class="sc-val" id="nlpExperience">—</div>
-          <div class="sc-sub">years total</div>
-        </div>
+        <div class="nlp-score-card"><div class="sc-label">Final Score</div><div class="sc-val" id="nlpFinalScore">—</div><div class="sc-sub">/ 100</div></div>
+        <div class="nlp-score-card"><div class="sc-label">Semantic Score</div><div class="sc-val" id="nlpSemanticScore">—</div><div class="sc-sub">/ 100</div></div>
+        <div class="nlp-score-card"><div class="sc-label">Rule Score</div><div class="sc-val" id="nlpRuleScore">—</div><div class="sc-sub">/ 100</div></div>
+        <div class="nlp-score-card"><div class="sc-label">Skill Coverage</div><div class="sc-val" id="nlpSkillCoverage">—</div><div class="sc-sub">% of required skills</div></div>
+        <div class="nlp-score-card"><div class="sc-label">Experience</div><div class="sc-val" id="nlpExperience">—</div><div class="sc-sub">years total</div></div>
       </div>
-
-      <!-- Score bars -->
       <div class="score-bars-section">
         <h3>Score Breakdown</h3>
-        <div class="score-bar-wrap">
-          <div class="score-bar-label"><span>Semantic Match</span><span id="barSemantic">0%</span></div>
-          <div class="score-bar"><div class="score-bar-fill" id="fillSemantic"></div></div>
-        </div>
-        <div class="score-bar-wrap">
-          <div class="score-bar-label"><span>Rule Match</span><span id="barRule">0%</span></div>
-          <div class="score-bar"><div class="score-bar-fill" id="fillRule"></div></div>
-        </div>
-        <div class="score-bar-wrap">
-          <div class="score-bar-label"><span>Skill Coverage</span><span id="barCoverage">0%</span></div>
-          <div class="score-bar"><div class="score-bar-fill" id="fillCoverage"></div></div>
-        </div>
+        <div class="score-bar-wrap"><div class="score-bar-label"><span>Semantic Match</span><span id="barSemantic">0%</span></div><div class="score-bar"><div class="score-bar-fill" id="fillSemantic"></div></div></div>
+        <div class="score-bar-wrap"><div class="score-bar-label"><span>Rule Match</span><span id="barRule">0%</span></div><div class="score-bar"><div class="score-bar-fill" id="fillRule"></div></div></div>
+        <div class="score-bar-wrap"><div class="score-bar-label"><span>Skill Coverage</span><span id="barCoverage">0%</span></div><div class="score-bar"><div class="score-bar-fill" id="fillCoverage"></div></div></div>
       </div>
-
-      <!-- Skills -->
-      <div class="skills-section">
-        <h3>✅ Matched Skills</h3>
-        <div class="skill-tags" id="matchedSkills"></div>
-      </div>
-
-      <div class="skills-section">
-        <h3>❌ Missing Skills</h3>
-        <div class="skill-tags" id="missingSkills"></div>
-      </div>
-
+      <div class="skills-section"><h3>✅ Matched Skills</h3><div class="skill-tags" id="matchedSkills"></div></div>
+      <div class="skills-section"><h3>❌ Missing Skills</h3><div class="skill-tags" id="missingSkills"></div></div>
       <div id="semanticMatchesSection" class="skills-section" style="display:none">
         <h3>〜 Semantic Matches <span style="font-weight:300;font-size:0.75rem;color:var(--muted)">(close but not exact)</span></h3>
         <div class="skill-tags" id="semanticMatches"></div>
       </div>
-
-      <!-- Insights -->
       <div class="insights-grid">
-        <div class="insight-card">
-          <h4 class="strength">💪 Strengths</h4>
-          <ul class="insight-list" id="strengthsList"></ul>
-        </div>
-        <div class="insight-card">
-          <h4 class="weakness">⚠ Weaknesses</h4>
-          <ul class="insight-list" id="weaknessesList"></ul>
-        </div>
-        <div class="insight-card" style="grid-column: 1/-1;">
-          <h4 class="recommendation">💡 Recommendations</h4>
-          <ul class="insight-list" id="recommendationsList"></ul>
-        </div>
+        <div class="insight-card"><h4 class="strength">💪 Strengths</h4><ul class="insight-list" id="strengthsList"></ul></div>
+        <div class="insight-card"><h4 class="weakness">⚠ Weaknesses</h4><ul class="insight-list" id="weaknessesList"></ul></div>
+        <div class="insight-card" style="grid-column: 1/-1;"><h4 class="recommendation">💡 Recommendations</h4><ul class="insight-list" id="recommendationsList"></ul></div>
       </div>
-
       <div class="divider"></div>
       <div class="btn-row">
         <button type="button" class="btn btn-primary" onclick="goToStep(3)">Proceed to Camera Interview →</button>
@@ -406,12 +307,10 @@
       <div class="panel-tag">Step 03 / Live Interview</div>
       <h2>Camera assessment</h2>
       <p class="panel-desc">Answer the question on camera. AI will score your eye contact, posture, and confidence.</p>
-
       <div class="question-card">
         <div class="q-label">Your Question</div>
         <div class="q-text" id="questionText">Loading…</div>
       </div>
-
       <div class="camera-box">
         <video id="videoFeed" autoplay muted playsinline></video>
         <div class="camera-placeholder" id="camPlaceholder">
@@ -422,7 +321,6 @@
           <div class="rec-dot"></div> RECORDING
         </div>
       </div>
-
       <div class="timer-display" id="timerDisplay">00:20</div>
       <div class="error-notice" id="step2Error"></div>
       <div class="btn-row">
@@ -437,58 +335,37 @@
       <div class="panel-tag">Step 04 / Final Results</div>
       <h2>Assessment complete</h2>
       <p class="panel-desc">Your comprehensive AI hiring decision.</p>
-
       <div class="verdict-box" id="verdictBox">
         <span class="verdict-icon" id="verdictIcon">⏳</span>
         <div class="verdict-title" id="verdictTitle">Calculating…</div>
         <div class="verdict-score" id="verdictScore">—</div>
         <div class="verdict-sub">/ 100 candidate score</div>
       </div>
-
       <div class="breakdown">
         <h3>Score Breakdown</h3>
-        <div class="breakdown-row">
-          <span class="breakdown-name">NLP / RESUME MATCH</span>
-          <span class="breakdown-weight">60%</span>
-          <span class="breakdown-val" id="nlpFinal">—</span>
-        </div>
-        <div class="breakdown-row">
-          <span class="breakdown-name">EYE CONTACT</span>
-          <span class="breakdown-weight">CV</span>
-          <span class="breakdown-val" id="eyeScore">—</span>
-        </div>
-        <div class="breakdown-row">
-          <span class="breakdown-name">HEAD POSTURE</span>
-          <span class="breakdown-weight">CV</span>
-          <span class="breakdown-val" id="postureScore">—</span>
-        </div>
-        <div class="breakdown-row">
-          <span class="breakdown-name">CONFIDENCE</span>
-          <span class="breakdown-weight">40%</span>
-          <span class="breakdown-val" id="confScore">—</span>
-        </div>
+        <div class="breakdown-row"><span class="breakdown-name">NLP / RESUME MATCH</span><span class="breakdown-weight">60%</span><span class="breakdown-val" id="nlpFinal">—</span></div>
+        <div class="breakdown-row"><span class="breakdown-name">EYE CONTACT</span><span class="breakdown-weight">CV</span><span class="breakdown-val" id="eyeScore">—</span></div>
+        <div class="breakdown-row"><span class="breakdown-name">HEAD POSTURE</span><span class="breakdown-weight">CV</span><span class="breakdown-val" id="postureScore">—</span></div>
+        <div class="breakdown-row"><span class="breakdown-name">CONFIDENCE</span><span class="breakdown-weight">40%</span><span class="breakdown-val" id="confScore">—</span></div>
       </div>
-
       <div class="score-bar-wrap">
         <div class="score-bar-label"><span>Overall Score</span><span id="barLabel">0</span></div>
         <div class="score-bar"><div class="score-bar-fill" id="scoreFill"></div></div>
       </div>
-
       <div class="btn-row">
         <button type="button" class="btn btn-secondary" onclick="resetAll()">← Start Over</button>
       </div>
     </div>
 
-    <div class="footer-hint">Paste your ngrok URL in the bar above to begin</div>
+    <div class="footer-hint">AI-Powered Hiring Intelligence — Talent Lens</div>
   </div>
 
   <script>
-    // Global error catcher — surfaces any uncaught JS error visibly
     window.onerror = function(msg, src, line, col, err) {
       console.error('[HireVision] UNCAUGHT ERROR:', msg, 'at line', line, err);
       var e = document.getElementById('step1Error');
       if (e) { e.textContent = '\u26A0 JS Error: ' + msg + ' (line ' + line + ')'; e.classList.add('show'); }
-      return true; // prevent default browser error handling
+      return true;
     };
     window.onunhandledrejection = function(event) {
       console.error('[HireVision] UNHANDLED PROMISE:', event.reason);
@@ -496,37 +373,8 @@
       if (e) { e.textContent = '\u26A0 Async Error: ' + event.reason; e.classList.add('show'); }
     };
 
-    let BASE = 'https://Prashant-20-Talent-Lens.hf.space';
-    const NGROK_H = { 'ngrok-skip-browser-warning': '1' };
+    const BASE = 'https://Prashant-20-Talent-Lens.hf.space';
     let nlpScore = 0, cvData = {}, stream = null, timerInterval = null;
-
-    // CONNECT
-    async function ping() {
-      const val = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      const dot = document.getElementById('urlDot');
-      if (!val) { dot.className = 'url-dot bad'; return; }
-      // Basic URL validation — must start with http
-      if (!val.startsWith('http://') && !val.startsWith('https://')) {
-        dot.className = 'url-dot bad';
-        alert('URL must start with http:// or https://');
-        return;
-      }
-      dot.className = 'url-dot';
-      // Set BASE immediately from the input — don't wait for /docs fetch
-      BASE = val;
-      dot.className = 'url-dot ok';
-      console.log('[HireVision] BASE set to:', BASE);
-      // Optionally verify in background (non-blocking)
-      try {
-        const ctrl = new AbortController();
-        setTimeout(() => ctrl.abort(), 5000);
-        const r = await fetch(val + '/docs', { headers: NGROK_H, signal: ctrl.signal });
-        console.log('[HireVision] /docs ping status:', r.status);
-      } catch(e) {
-        // Don't clear BASE — ngrok /docs may redirect or 404, backend can still work
-        console.warn('[HireVision] /docs ping failed (non-fatal):', e.message);
-      }
-    }
 
     // FILE DROP
     const fileDrop = document.getElementById('fileDrop');
@@ -569,18 +417,8 @@
       var job = document.getElementById('jobText').value.trim();
       var err = document.getElementById('step1Error');
       err.classList.remove('show');
-
-      // Always read URL fresh from input — never rely on cached BASE
-      const inputVal = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (inputVal.startsWith('http')) {
-        BASE = inputVal;
-      }
-      if (!BASE || !BASE.startsWith('http')) {
-        return showError(err, 'Please paste your ngrok URL in the bar above first.');
-      }
-      console.log('[HireVision] Using BASE:', BASE);
-      if (!file)  return showError(err, 'Please upload a resume file.');
-      if (!job)   return showError(err, 'Please paste the job description.');
+      if (!file) return showError(err, 'Please upload a resume file.');
+      if (!job)  return showError(err, 'Please paste the job description.');
 
       var btn = document.getElementById('analyzeBtn');
       btn.disabled = true;
@@ -591,36 +429,18 @@
       fd.append('job_text', job);
 
       try {
-        var res = await fetch(BASE + '/resume-scoring/', {
-          method: 'POST',
-          headers: {},
-          body: fd
-        });
-
+        var res = await fetch(BASE + '/resume-scoring/', { method: 'POST', body: fd });
         var rawText = await res.text();
-        console.log('[HireVision] /resume-scoring/ status:', res.status);
-        console.log('[HireVision] /resume-scoring/ raw:', rawText);
-
-        if (!res.ok) {
-          return showError(err, 'Server error ' + res.status + ': ' + rawText.slice(0, 200));
-        }
-
+        if (!res.ok) return showError(err, 'Server error ' + res.status + ': ' + rawText.slice(0, 200));
         var d;
         try { d = JSON.parse(rawText); }
-        catch(pe) {
-          console.error('[HireVision] JSON parse error:', pe);
-          return showError(err, 'Server returned invalid JSON. Check F12 console.');
-        }
-
+        catch(pe) { return showError(err, 'Server returned invalid JSON. Check F12 console.'); }
         if (d.error) return showError(err, d.error);
-
         renderNlpPanel(d);
         document.getElementById('questionText').textContent = d.question || 'Tell me about yourself.';
         goToStep(2);
-
       } catch(networkErr) {
-        console.error('[HireVision] Network error:', networkErr);
-        showError(err, 'Network error: ' + networkErr.message + '. Is ngrok running?');
+        showError(err, 'Network error: ' + networkErr.message);
       } finally {
         btn.disabled = false;
         document.getElementById('step1Loading').classList.remove('show');
@@ -631,7 +451,6 @@
     function renderNlpPanel(data) {
       try {
         var nlp = data.nlp_analysis || {};
-
         var finalRaw = (nlp.final_score !== undefined) ? nlp.final_score : 0.5;
         nlpScore = Math.round(finalRaw * 100);
 
@@ -643,21 +462,18 @@
         badge.textContent = badgeIcon + ' ' + (nlp.match_category || 'Unknown Match');
 
         document.getElementById('nlpFinalScore').textContent = nlpScore;
-        document.getElementById('nlpSemanticScore').textContent = Math.round(((nlp.semantic_score !== undefined ? nlp.semantic_score : 0)) * 100);
-        document.getElementById('nlpRuleScore').textContent = Math.round(((nlp.rule_score !== undefined ? nlp.rule_score : 0)) * 100);
-        document.getElementById('nlpSkillCoverage').textContent = Math.round(((nlp.skill_coverage !== undefined ? nlp.skill_coverage : 0)) * 100);
-        document.getElementById('nlpExperience').textContent = ((nlp.total_experience !== undefined ? nlp.total_experience : 0)).toFixed(1);
+        document.getElementById('nlpSemanticScore').textContent = Math.round((nlp.semantic_score || 0) * 100);
+        document.getElementById('nlpRuleScore').textContent = Math.round((nlp.rule_score || 0) * 100);
+        document.getElementById('nlpSkillCoverage').textContent = Math.round((nlp.skill_coverage || 0) * 100);
+        document.getElementById('nlpExperience').textContent = (nlp.total_experience || 0).toFixed(1);
 
         setTimeout(function() {
-          var sem = Math.round(((nlp.semantic_score !== undefined ? nlp.semantic_score : 0)) * 100);
-          var rule = Math.round(((nlp.rule_score !== undefined ? nlp.rule_score : 0)) * 100);
-          var cov = Math.round(((nlp.skill_coverage !== undefined ? nlp.skill_coverage : 0)) * 100);
-          document.getElementById('fillSemantic').style.width = sem + '%';
-          document.getElementById('barSemantic').textContent = sem + '%';
-          document.getElementById('fillRule').style.width = rule + '%';
-          document.getElementById('barRule').textContent = rule + '%';
-          document.getElementById('fillCoverage').style.width = cov + '%';
-          document.getElementById('barCoverage').textContent = cov + '%';
+          var sem = Math.round((nlp.semantic_score || 0) * 100);
+          var rule = Math.round((nlp.rule_score || 0) * 100);
+          var cov = Math.round((nlp.skill_coverage || 0) * 100);
+          document.getElementById('fillSemantic').style.width = sem + '%'; document.getElementById('barSemantic').textContent = sem + '%';
+          document.getElementById('fillRule').style.width = rule + '%'; document.getElementById('barRule').textContent = rule + '%';
+          document.getElementById('fillCoverage').style.width = cov + '%'; document.getElementById('barCoverage').textContent = cov + '%';
         }, 300);
 
         var matchedEl = document.getElementById('matchedSkills');
@@ -681,18 +497,14 @@
         if (semKeys.length > 0) {
           semSection.style.display = '';
           semKeys.forEach(function(k) { semEl.appendChild(makeTag(k + ' → ' + semMatches[k], 'semantic')); });
-        } else {
-          semSection.style.display = 'none';
-        }
+        } else { semSection.style.display = 'none'; }
 
         var insights = nlp.candidate_insights || {};
         renderInsightList('strengthsList', insights.strengths || []);
         renderInsightList('weaknessesList', insights.weaknesses || []);
         renderInsightList('recommendationsList', insights.recommendations || []);
-
       } catch(e) {
-        console.error('[HireVision] renderNlpPanel error:', e);
-        showError(document.getElementById('step1Error'), 'UI render error: ' + e.message + ' (F12 for details)');
+        showError(document.getElementById('step1Error'), 'UI render error: ' + e.message);
       }
     }
 
@@ -706,17 +518,8 @@
     function renderInsightList(id, items) {
       var el = document.getElementById(id);
       el.innerHTML = '';
-      if (!items.length) {
-        var li = document.createElement('li');
-        li.textContent = 'No data available.';
-        el.appendChild(li);
-        return;
-      }
-      items.forEach(function(txt) {
-        var li = document.createElement('li');
-        li.textContent = txt;
-        el.appendChild(li);
-      });
+      if (!items.length) { var li = document.createElement('li'); li.textContent = 'No data available.'; el.appendChild(li); return; }
+      items.forEach(function(txt) { var li = document.createElement('li'); li.textContent = txt; el.appendChild(li); });
     }
 
     // STEP 3: CAMERA
@@ -736,9 +539,6 @@
     async function startRecording() {
       var err = document.getElementById('step2Error');
       err.classList.remove('show');
-      // Always refresh BASE from input
-      const _url = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (_url.startsWith('http')) BASE = _url;
       document.getElementById('recordBtn').style.display = 'none';
       document.getElementById('camStatus').classList.add('show');
       document.getElementById('timerDisplay').classList.add('show');
@@ -747,28 +547,51 @@
       document.getElementById('timerDisplay').textContent = '00:20';
       timerInterval = setInterval(function() {
         secs--;
-        document.getElementById('timerDisplay').textContent = '00:' + String(secs).padStart(2,'0');
+        document.getElementById('timerDisplay').textContent = '00:' + String(secs).padStart(2, '0');
         if (secs <= 0) clearInterval(timerInterval);
       }, 1000);
 
+      // Reset session on server
+      await fetch(BASE + '/reset-cv/', { method: 'POST' }).catch(() => {});
+
+      // Capture and send frames every second for 20 seconds
+      var canvas = document.createElement('canvas');
+      canvas.width = 640; canvas.height = 480;
+      var ctx = canvas.getContext('2d');
+      var video = document.getElementById('videoFeed');
+      var frameCount = 0;
+
+      var frameInterval = setInterval(async function() {
+        if (frameCount >= 20) {
+          clearInterval(frameInterval);
+          await finalizeCv();
+          return;
+        }
+        ctx.drawImage(video, 0, 0, 640, 480);
+        canvas.toBlob(async function(blob) {
+          var fd = new FormData();
+          fd.append('frame', blob, 'frame.jpg');
+          await fetch(BASE + '/analyze-frame/', { method: 'POST', body: fd }).catch(() => {});
+        }, 'image/jpeg', 0.8);
+        frameCount++;
+      }, 1000);
+    }
+
+    async function finalizeCv() {
       document.getElementById('step2Loading').classList.add('show');
       if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
       try {
-        var res = await fetch(BASE + '/analyze-camera/', { headers: NGROK_H });
+        var res = await fetch(BASE + '/finalize-cv/', { method: 'POST' });
         if (!res.ok) throw new Error(res.status);
         var d = await res.json();
         cvData = d.cv_analysis || {};
-        clearInterval(timerInterval);
         document.getElementById('camStatus').classList.remove('show');
         document.getElementById('timerDisplay').classList.remove('show');
         await computeFinal();
         goToStep(4);
       } catch(e) {
-        clearInterval(timerInterval);
-        document.getElementById('camStatus').classList.remove('show');
-        document.getElementById('timerDisplay').classList.remove('show');
         document.getElementById('recordBtn').style.display = 'inline-flex';
-        showError(err, 'CV analysis failed: ' + e.message);
+        showError(document.getElementById('step2Error'), 'CV analysis failed: ' + e.message);
       } finally {
         document.getElementById('step2Loading').classList.remove('show');
       }
@@ -776,17 +599,13 @@
 
     // STEP 4: FINAL
     async function computeFinal() {
-      // Always refresh BASE from input
-      const _url2 = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (_url2.startsWith('http')) BASE = _url2;
       var conf = (cvData.confidence_score !== undefined) ? cvData.confidence_score : 50;
       var final;
       try {
-        var res = await fetch(BASE + '/final-score/?nlp_score=' + nlpScore + '&confidence_score=' + conf, { method: 'POST', headers: NGROK_H });
+        var res = await fetch(BASE + '/final-score/?nlp_score=' + nlpScore + '&confidence_score=' + conf, { method: 'POST' });
         var d = await res.json();
         final = Math.round((d.final_candidate_score !== undefined) ? d.final_candidate_score : (0.6 * nlpScore + 0.4 * conf));
       } catch(e) {
-        console.warn('[HireVision] final-score endpoint failed, computing locally:', e);
         final = Math.round(0.6 * nlpScore + 0.4 * conf);
       }
 
@@ -796,9 +615,9 @@
       document.getElementById('verdictTitle').textContent = hired ? 'Congratulations!' : 'Keep Improving';
       document.getElementById('verdictScore').textContent = final;
       document.getElementById('nlpFinal').textContent     = Math.round(nlpScore);
-      document.getElementById('eyeScore').textContent     = Math.round((cvData.eye_contact_score !== undefined) ? cvData.eye_contact_score : 0);
-      document.getElementById('postureScore').textContent = Math.round((cvData.head_posture_score !== undefined) ? cvData.head_posture_score : 0);
-      document.getElementById('confScore').textContent    = Math.round((cvData.confidence_score !== undefined) ? cvData.confidence_score : 0);
+      document.getElementById('eyeScore').textContent     = Math.round(cvData.eye_contact_score || 0);
+      document.getElementById('postureScore').textContent = Math.round(cvData.head_posture_score || 0);
+      document.getElementById('confScore').textContent    = Math.round(cvData.confidence_score || 0);
       setTimeout(function() {
         document.getElementById('scoreFill').style.width = final + '%';
         document.getElementById('barLabel').textContent  = final + '/100';
