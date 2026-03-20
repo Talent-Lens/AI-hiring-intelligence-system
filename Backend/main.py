@@ -1,5 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 import shutil
 import os
 import random
@@ -20,6 +23,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*","ngrok-skip-browser-warning"],
 )
+# Serve index.html at root
+@app.get("/")
+def serve_frontend():
+    return FileResponse("index.html")
+
+# Mount static files if you have CSS/JS files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 questions = [
     "Tell me about yourself.",
