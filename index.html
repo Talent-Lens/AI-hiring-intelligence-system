@@ -570,17 +570,15 @@
       var err = document.getElementById('step1Error');
       err.classList.remove('show');
 
-      if (!BASE || !BASE.startsWith('http')) {
-        // Try to grab it directly from the input as fallback
-        const inputVal = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-        if (inputVal.startsWith('http')) {
-          BASE = inputVal;
-          document.getElementById('urlDot').className = 'url-dot ok';
-          console.log('[HireVision] BASE recovered from input:', BASE);
-        } else {
-          return showError(err, 'No backend connected. Paste your ngrok URL above and click Connect.');
-        }
+      // Always read URL fresh from input — never rely on cached BASE
+      const inputVal = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+      if (inputVal.startsWith('http')) {
+        BASE = inputVal;
       }
+      if (!BASE || !BASE.startsWith('http')) {
+        return showError(err, 'Please paste your ngrok URL in the bar above first.');
+      }
+      console.log('[HireVision] Using BASE:', BASE);
       if (!file)  return showError(err, 'Please upload a resume file.');
       if (!job)   return showError(err, 'Please paste the job description.');
 
@@ -738,6 +736,9 @@
     async function startRecording() {
       var err = document.getElementById('step2Error');
       err.classList.remove('show');
+      // Always refresh BASE from input
+      const _url = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+      if (_url.startsWith('http')) BASE = _url;
       document.getElementById('recordBtn').style.display = 'none';
       document.getElementById('camStatus').classList.add('show');
       document.getElementById('timerDisplay').classList.add('show');
@@ -775,6 +776,9 @@
 
     // STEP 4: FINAL
     async function computeFinal() {
+      // Always refresh BASE from input
+      const _url2 = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+      if (_url2.startsWith('http')) BASE = _url2;
       var conf = (cvData.confidence_score !== undefined) ? cvData.confidence_score : 50;
       var final;
       try {
