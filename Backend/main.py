@@ -32,9 +32,6 @@ app.add_middleware(
 def serve_frontend():
     return FileResponse("index.html")
 
-# Mount static files if you have CSS/JS files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 questions = [
     "Tell me about yourself.",
     "Why should we hire you?",
