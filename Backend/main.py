@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
 import random
@@ -11,6 +12,15 @@ app = FastAPI()
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+#for frontend connection
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*","ngrok-skip-browser-warning"],
+)
+
 questions = [
     "Tell me about yourself.",
     "Why should we hire you?",
@@ -18,55 +28,48 @@ questions = [
     "What are your strengths?"
 ]
 
-
-@app.post("/start-interview/")
-async def start_interview(
+@app.post("/resume-scoring/")
+async def resume_endpoint(
     resume: UploadFile = File(...),
     job_text: str = Form(...)
 ):
-
-    # ---------------- SAVE RESUME ----------------
+    # Save resume
     resume_path = os.path.join(UPLOAD_FOLDER, resume.filename)
 
     with open(resume_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
-
-    # ---------------- QUESTION ----------------
     question = random.choice(questions)
-
-    # ---------------- CV ENGINE ----------------
-    cv_results = analyze_camera(question, 20)   
-
-    # ---------------- NLP ENGINE ----------------
+    # NLP 
     results = process_resumes(job_text, [resume_path])
 
     if not results:
         return {"error": "Resume processing failed"}
 
     nlp_result = results[0]
+    
+    return {
+        "nlp_analysis": nlp_result,
+        "question": question
+    }
 
-    # ---------------- FINAL SCORE ----------------
-    confidence_score = cv_results["confidence_score"]
-    final_candidate_score= 0.6*nlp_result["final_score"] + 0.4 * cv_results["confidence_score"]
-    if(final_candidate_score > 65):
-        hired=True
-    else:
-        hired=False
+@app.get("/analyze-camera/")
+def analyze_camera_endpoint():
+     # Question
+    
+    cv_results = analyze_camera(20)   # FIX function to take only duration
 
     return {
-    "question": question,
+        "cv_analysis": {
+            "eye_contact_score": cv_results["eye_contact_score"],
+            "head_posture_score": cv_results["head_posture_score"],
+            "confidence_score": cv_results["confidence_score"]
+        }
+    }
+@app.post("/final-score/")
+async def final_score(nlp_score: float, confidence_score: float):
+    final = 0.6 * nlp_score + 0.4 * confidence_score
 
-    # -------- NLP FULL OUTPUT --------
-    "nlp_analysis": nlp_result,
-    
-    # -------- CV OUTPUT --------
-    "cv_analysis": {
-        "eye_contact_score": cv_results["eye_contact_score"],
-        "head_posture_score": cv_results["head_posture_score"],
-        "confidence_score": cv_results["confidence_score"]
-    },
-
-    # -------- FINAL SCORE --------
-    "final_candidate_score": 0.6 * nlp_result["final_score"] + 0.4 * cv_results["confidence_score"],
-    "hired": hired
-}
+    return {
+        "final_candidate_score": final,
+        "hired": final > 65
+    }
