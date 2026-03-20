@@ -75,6 +75,11 @@ def finalize_cv():
     reset_session()
     return {"cv_analysis": scores}
 
+@app.post("/reset-cv/")
+def reset_cv():
+    reset_session()
+    return {"ok": True}
+
 @app.post("/final-score/")
 async def final_score(nlp_score: float, confidence_score: float):
     final = 0.6 * nlp_score + 0.4 * confidence_score
