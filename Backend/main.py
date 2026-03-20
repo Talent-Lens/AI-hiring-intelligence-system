@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/app')
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -7,8 +9,8 @@ import shutil
 import os
 import random
 
-from CV_Engine.main import analyze_camera
 from main import process_resumes   
+from CV_Engine.main import analyze_camera
 
 app = FastAPI()
 
