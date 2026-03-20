@@ -3,6 +3,10 @@ import os
 sys.path.insert(0, '/app')
 os.chdir('/app')
 
+print("sys.path:", sys.path, flush=True)
+print("files in /app:", os.listdir('/app'), flush=True)
+print("files in /app/backend:", os.listdir('/app/backend'), flush=True)
+
 import uvicorn
 
 if __name__ == "__main__":
