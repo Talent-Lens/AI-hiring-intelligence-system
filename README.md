@@ -1,1 +1,8 @@
-# AI-hiring-intelligence-system
+---
+title: Talent Lens
+emoji: 🎯
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+---
