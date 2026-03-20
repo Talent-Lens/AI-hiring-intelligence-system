@@ -1,6 +1,7 @@
 import sys
+sys.path.insert(0, '/app')
 print("=== STARTING UP ===", flush=True)
-sys.path.append('/app')
+
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -10,7 +11,7 @@ import shutil
 import os
 import random
 
-from main import process_resumes   
+from nlp_main import process_resumes
 from CV_Engine.main import analyze_camera
 
 app = FastAPI()
