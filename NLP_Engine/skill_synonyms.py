@@ -16,7 +16,7 @@ SKILL_SYNONYMS = {
     "javascript":["js"],
     "typescript":["ts"],
     "node.js":["node","nodejs"],
-    "spring boot":["sklearn","scikit-learn"],
+    "spring boot":["springboot", "spring-boot","spring boot framework"],
     "express":["express.js"],
     "scikit-learn":["sklearn","scikit learn"],
     "pytorch":["torch"],
