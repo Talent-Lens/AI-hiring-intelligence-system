@@ -30,7 +30,7 @@ app.add_middleware(
 # Serve index.html at root
 @app.get("/")
 def serve_frontend():
-    return FileResponse("index.html")
+    return FileResponse("/app/index.html")
 
 questions = [
     "Tell me about yourself.",
