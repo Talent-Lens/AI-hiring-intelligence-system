@@ -6,6 +6,8 @@ from NLP_Engine.matcher import match_resume_to_job
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 from NLP_Engine.explanation_engine import generate_candidate_insights   
 
+
+
 def main():
 
     # ---------------- JOB INPUT ----------------
@@ -44,6 +46,7 @@ def main():
         return
 
     results = []
+    
 
     # ---------------- PROCESS RESUMES ----------------
     for filename in os.listdir(resume_folder):
@@ -57,7 +60,8 @@ def main():
                 file_path,
                 required_skills=job_data["required_skills"]
             )
-
+            
+    
             match_result = match_resume_to_job(job_data, resume_data)
             skill_gap = analyze_skill_gap(job_data, resume_data)
             match_result["total_experience"] = resume_data.get("total_experience", 0)
