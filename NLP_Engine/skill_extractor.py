@@ -23,7 +23,8 @@ SKILL_DB = {
     "aws": ["aws", "amazon web services"],
     "docker": ["docker"],
     "kubernetes": ["kubernetes"],
-    "git": ["git"]
+    "git": ["git"],
+    "fastapi": ["fastapi", "fast api", "fast-api", "fast api framework", "fastapi framework"],
 }
 
 SKILL_SYNONYMS = {

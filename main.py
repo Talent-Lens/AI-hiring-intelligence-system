@@ -18,8 +18,8 @@ def main():
     Kubernetes,
     CI/CD,
     AWS,
-    Linux
-    
+    Linux,
+    FastAPI
     Preferred:
     Terraform
     Prometheus
@@ -88,6 +88,7 @@ def main():
 
     # ---------------- SORT RESULTS ----------------
     results.sort(key=lambda x: x["final_score"], reverse=True)
+    
 
     # ---------------- DISPLAY RESULTS ----------------
     print("\n===== RANKED CANDIDATES =====\n")
