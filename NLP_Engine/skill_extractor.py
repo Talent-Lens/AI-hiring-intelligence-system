@@ -23,6 +23,7 @@ SKILL_DB = {
     "aws": ["aws", "amazon web services"],
     "docker": ["docker"],
     "kubernetes": ["kubernetes"],
+    "fastapi": ["fastapi", "fast api", "fast-api", "fastapi framework", "fast api framework"],
     "git": ["git"]
 }
 
