@@ -1,7 +1,3 @@
-import sys
-sys.path.insert(0, '/app')
-print("=== STARTING UP ===", flush=True)
-
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -11,8 +7,8 @@ import shutil
 import os
 import random
 
-from nlp_main import process_resumes
-from CV_Engine.main import analyze_frame, get_final_scores, reset_session
+from CV_Engine.main import analyze_camera
+from main import process_resumes   
 
 app = FastAPI()
 
@@ -30,7 +26,10 @@ app.add_middleware(
 # Serve index.html at root
 @app.get("/")
 def serve_frontend():
-    return FileResponse("/app/index.html")
+    return FileResponse("index.html")
+
+# Mount static files if you have CSS/JS files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 questions = [
     "Tell me about yourself.",
@@ -63,23 +62,19 @@ async def resume_endpoint(
         "question": question
     }
 
-@app.post("/analyze-frame/")
-async def analyze_frame_endpoint(frame: UploadFile = File(...)):
-    frame_bytes = await frame.read()
-    result = analyze_frame(frame_bytes)
-    return result
+@app.get("/analyze-camera/")
+def analyze_camera_endpoint():
+     # Question
+    
+    cv_results = analyze_camera(20)   # FIX function to take only duration
 
-@app.post("/finalize-cv/")
-def finalize_cv():
-    scores = get_final_scores()
-    reset_session()
-    return {"cv_analysis": scores}
-
-@app.post("/reset-cv/")
-def reset_cv():
-    reset_session()
-    return {"ok": True}
-
+    return {
+        "cv_analysis": {
+            "eye_contact_score": cv_results["eye_contact_score"],
+            "head_posture_score": cv_results["head_posture_score"],
+            "confidence_score": cv_results["confidence_score"]
+        }
+    }
 @app.post("/final-score/")
 async def final_score(nlp_score: float, confidence_score: float):
     final = 0.6 * nlp_score + 0.4 * confidence_score
