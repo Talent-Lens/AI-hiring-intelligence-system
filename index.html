@@ -229,6 +229,26 @@
       .nav-inner { gap: 10px; }
       .nlp-scores-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* Ranked List Styles */
+    .ranking-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+    .ranking-item {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px 20px; display: flex; align-items: center; gap: 20px;
+      cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .ranking-item:hover { border-color: var(--accent); transform: translateX(4px); background: rgba(200,255,87,0.03); }
+    .rank-number { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--muted); min-width: 30px; }
+    .ranking-item:nth-child(1) .rank-number { color: var(--accent); }
+    .ranking-item:nth-child(2) .rank-number { color: var(--accent2); }
+    .ranking-item:nth-child(3) .rank-number { color: var(--accent3); }
+    .candidate-info { flex: 1; }
+    .candidate-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin-bottom: 2px; color: var(--text); }
+    .candidate-meta { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
+    .candidate-score-pill { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-family: var(--font-display); font-weight: 800; color: var(--accent); font-size: 0.9rem; }
+    .ranking-item::after { content: "View Details →"; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent); opacity: 0; transition: opacity 0.2s; }
+    .ranking-item:hover::after { opacity: 1; }
+    .ranking-item:hover .candidate-score-pill { margin-right: 80px; }
   </style>
 </head>
 <body>
@@ -290,9 +310,9 @@
         <label>Resume File</label>
         <div class="file-drop" id="fileDrop" onclick="document.getElementById('resumeFile').click()">
           <span class="drop-icon">📄</span>
-          <div class="drop-text"><strong>Click to upload</strong> or drag &amp; drop<br/>PDF, DOC, DOCX</div>
+          <div class="drop-text"><strong>Click to upload</strong> or drag &amp; drop<br/>PDF (Multiple allowed)</div>
         </div>
-        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx"/>
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" multiple/>
         <div class="file-name" id="fileName"></div>
       </div>
 
@@ -312,9 +332,16 @@
     <div class="panel" id="panel-nlp">
       <div class="panel-tag">Step 02 / NLP Results</div>
       <h2>Resume analysis complete</h2>
-      <p class="panel-desc">Here's how your resume stacks up against the job requirements.</p>
+      <p class="panel-desc">Here's how your resumes stack up against the job requirements, ranked by match score.</p>
 
-      <div id="matchBadge" class="match-badge weak">⚡ Weak Match</div>
+      <div id="rankedResultsContainer"></div>
+
+      <div id="detailedAnalysis" style="display:none">
+        <button class="btn-ping" onclick="showRankedList()" style="margin-bottom: 20px;">
+          ← Back to Rankings
+        </button>
+        <div id="selectedCandidateName" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin-bottom: 10px;"></div>
+        <div id="matchBadge" class="match-badge"></div>
 
       <!-- Score cards -->
       <div class="nlp-scores-grid">
@@ -396,10 +423,21 @@
 
       <div class="divider"></div>
       <div class="btn-row">
-        <button type="button" class="btn btn-primary" onclick="goToStep(3)">Proceed to Camera Interview →</button>
-        <button type="button" class="btn btn-secondary" onclick="goToStep(1)">← Re-upload</button>
+        <button type="button" class="btn btn-primary" onclick="goToStep(3)">
+          Proceed with this candidate →
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="showRankedList()">
+          ← Other Candidates
+        </button>
       </div>
+    </div> <!-- End detailedAnalysis -->
+
+    <div class="btn-row" id="rankNavButtons">
+      <button type="button" class="btn btn-secondary" onclick="goToStep(1)">
+        ← Upload more resumes
+      </button>
     </div>
+  </div>
 
     <!-- STEP 3: Camera -->
     <div class="panel" id="panel-3">
@@ -498,7 +536,9 @@
 
     let BASE = '';
     const NGROK_H = { 'ngrok-skip-browser-warning': '1' };
-    let nlpScore = 0, cvData = {}, stream = null, timerInterval = null;
+    let nlpScore = 0, cvData = {}, stream = null, timerInterval = null,
+        resultsArray = [], selectedCandidate = null,
+        selectedFiles = []; // Persistent list of files
 
     // CONNECT
     async function ping() {
@@ -535,9 +575,45 @@
     fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
     fileDrop.addEventListener('drop', e => {
       e.preventDefault(); fileDrop.classList.remove('drag-over');
-      if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; document.getElementById('fileName').textContent = '\u{1F4CE} ' + e.dataTransfer.files[0].name; }
+      if (e.dataTransfer.files.length > 0) {
+        addFiles(e.dataTransfer.files);
+      }
     });
-    fileInput.addEventListener('change', () => { if (fileInput.files[0]) document.getElementById('fileName').textContent = '\u{1F4CE} ' + fileInput.files[0].name; });
+    fileInput.addEventListener('change', () => { addFiles(fileInput.files); });
+
+    function addFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        // Prevent duplicates by name
+        if (!selectedFiles.find(f => f.name === files[i].name)) {
+          selectedFiles.push(files[i]);
+        }
+      }
+      updateFileLabel();
+    }
+
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      updateFileLabel();
+    }
+
+    function updateFileLabel() {
+      const listEl = document.getElementById('fileName');
+      listEl.innerHTML = '';
+      if (selectedFiles.length === 0) {
+        listEl.textContent = 'No resumes selected';
+        return;
+      }
+      
+      selectedFiles.forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.style = 'display: flex; align-items: center; justify-content: space-between; background: var(--surface2); padding: 8px 12px; border-radius: 8px; margin-top: 8px; font-family: var(--font-mono); font-size: 0.75rem;';
+        item.innerHTML = `
+          <span>\u{1F4CE} ${file.name}</span>
+          <button onclick="removeFile(${idx})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem;">&times;</button>
+        `;
+        listEl.appendChild(item);
+      });
+    }
 
     // STEPS
     function goToStep(n) {
@@ -565,7 +641,7 @@
 
     // STEP 1
     async function submitResume() {
-      var file = fileInput.files[0];
+      var files = selectedFiles;
       var job = document.getElementById('jobText').value.trim();
       var err = document.getElementById('step1Error');
       err.classList.remove('show');
@@ -579,7 +655,7 @@
         return showError(err, 'Please paste your ngrok URL in the bar above first.');
       }
       console.log('[HireVision] Using BASE:', BASE);
-      if (!file)  return showError(err, 'Please upload a resume file.');
+      if (files.length === 0) return showError(err, 'Please upload at least one resume file.');
       if (!job)   return showError(err, 'Please paste the job description.');
 
       var btn = document.getElementById('analyzeBtn');
@@ -587,7 +663,9 @@
       document.getElementById('step1Loading').classList.add('show');
 
       var fd = new FormData();
-      fd.append('resume', file);
+      for (var i = 0; i < files.length; i++) {
+        fd.append('resumes', files[i]);
+      }
       fd.append('job_text', job);
 
       try {
@@ -630,70 +708,126 @@
     // RENDER NLP PANEL
     function renderNlpPanel(data) {
       try {
-        var nlp = data.nlp_analysis || {};
-
-        var finalRaw = (nlp.final_score !== undefined) ? nlp.final_score : 0.5;
-        nlpScore = Math.round(finalRaw * 100);
-
-        var cat = (nlp.match_category || '').toLowerCase();
-        var badge = document.getElementById('matchBadge');
-        var badgeClass = cat.indexOf('strong') >= 0 ? 'strong' : cat.indexOf('moderate') >= 0 ? 'moderate' : cat.indexOf('weak') >= 0 ? 'weak' : 'poor';
-        badge.className = 'match-badge ' + badgeClass;
-        var badgeIcon = cat.indexOf('strong') >= 0 ? '\u2B50' : cat.indexOf('moderate') >= 0 ? '\u2728' : cat.indexOf('weak') >= 0 ? '\u26A1' : '\u26A0';
-        badge.textContent = badgeIcon + ' ' + (nlp.match_category || 'Unknown Match');
-
-        document.getElementById('nlpFinalScore').textContent = nlpScore;
-        document.getElementById('nlpSemanticScore').textContent = Math.round(((nlp.semantic_score !== undefined ? nlp.semantic_score : 0)) * 100);
-        document.getElementById('nlpRuleScore').textContent = Math.round(((nlp.rule_score !== undefined ? nlp.rule_score : 0)) * 100);
-        document.getElementById('nlpSkillCoverage').textContent = Math.round(((nlp.skill_coverage !== undefined ? nlp.skill_coverage : 0)) * 100);
-        document.getElementById('nlpExperience').textContent = ((nlp.total_experience !== undefined ? nlp.total_experience : 0)).toFixed(1);
-
-        setTimeout(function() {
-          var sem = Math.round(((nlp.semantic_score !== undefined ? nlp.semantic_score : 0)) * 100);
-          var rule = Math.round(((nlp.rule_score !== undefined ? nlp.rule_score : 0)) * 100);
-          var cov = Math.round(((nlp.skill_coverage !== undefined ? nlp.skill_coverage : 0)) * 100);
-          document.getElementById('fillSemantic').style.width = sem + '%';
-          document.getElementById('barSemantic').textContent = sem + '%';
-          document.getElementById('fillRule').style.width = rule + '%';
-          document.getElementById('barRule').textContent = rule + '%';
-          document.getElementById('fillCoverage').style.width = cov + '%';
-          document.getElementById('barCoverage').textContent = cov + '%';
-        }, 300);
-
-        var matchedEl = document.getElementById('matchedSkills');
-        matchedEl.innerHTML = '';
-        var gap = nlp.skill_gap_analysis || {};
-        var matched = nlp.matched_required || gap.matched_skills || [];
-        matched.forEach(function(s) { matchedEl.appendChild(makeTag(s, 'matched')); });
-        if (!matched.length) matchedEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted)">No matched skills found</span>';
-
-        var missingEl = document.getElementById('missingSkills');
-        missingEl.innerHTML = '';
-        var missing = nlp.missing_required || gap.missing_skills || [];
-        missing.forEach(function(s) { missingEl.appendChild(makeTag(s, 'missing')); });
-        if (!missing.length) missingEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--success)">No missing skills!</span>';
-
-        var semMatches = nlp.semantic_skill_matches || {};
-        var semSection = document.getElementById('semanticMatchesSection');
-        var semEl = document.getElementById('semanticMatches');
-        semEl.innerHTML = '';
-        var semKeys = Object.keys(semMatches);
-        if (semKeys.length > 0) {
-          semSection.style.display = '';
-          semKeys.forEach(function(k) { semEl.appendChild(makeTag(k + ' → ' + semMatches[k], 'semantic')); });
-        } else {
-          semSection.style.display = 'none';
-        }
-
-        var insights = nlp.candidate_insights || {};
-        renderInsightList('strengthsList', insights.strengths || []);
-        renderInsightList('weaknessesList', insights.weaknesses || []);
-        renderInsightList('recommendationsList', insights.recommendations || []);
-
-      } catch(e) {
-        console.error('[HireVision] renderNlpPanel error:', e);
-        showError(document.getElementById('step1Error'), 'UI render error: ' + e.message + ' (F12 for details)');
+        resultsArray = data.results || [];
+        renderRankedList();
+      } catch (e) {
+        showError(document.getElementById('step1Error'), 'UI render error: ' + e.message);
       }
+    }
+
+    function renderRankedList() {
+      var container = document.getElementById('rankedResultsContainer');
+      var detailed = document.getElementById('detailedAnalysis');
+      container.style.display = 'block';
+      detailed.style.display = 'none';
+      document.getElementById('rankNavButtons').style.display = 'flex';
+      container.innerHTML = '';
+
+      var list = document.createElement('div');
+      list.className = 'ranking-list';
+
+      resultsArray.forEach(function(nlp, index) {
+        var item = document.createElement('div');
+        item.className = 'ranking-item';
+        item.onclick = function() { showDetails(index); };
+
+        var rank = index + 1;
+        var score = Math.round((nlp.final_score || 0) * 100);
+        var exp = (nlp.total_experience || 0).toFixed(1);
+
+        item.innerHTML = `
+          <div class="rank-number">#${rank}</div>
+          <div class="candidate-info">
+            <div class="candidate-name">${nlp.filename}</div>
+            <div class="candidate-meta">${nlp.match_category} • ${exp} years exp</div>
+          </div>
+          <div class="candidate-score-pill">${score}%</div>
+        `;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+    }
+
+    function showRankedList() {
+      document.getElementById('rankedResultsContainer').style.display = 'block';
+      document.getElementById('detailedAnalysis').style.display = 'none';
+      document.getElementById('rankNavButtons').style.display = 'flex';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showDetails(index) {
+      var nlp = resultsArray[index];
+      selectedCandidate = nlp;
+      
+      document.getElementById('rankedResultsContainer').style.display = 'none';
+      document.getElementById('detailedAnalysis').style.display = 'block';
+      document.getElementById('rankNavButtons').style.display = 'none';
+      document.getElementById('selectedCandidateName').textContent = nlp.filename;
+
+      var finalRaw = (nlp.final_score !== undefined) ? nlp.final_score : 0.5;
+      nlpScore = Math.round(finalRaw * 100);
+
+      var cat = (nlp.match_category || '').toLowerCase();
+      var badge = document.getElementById('matchBadge');
+      var badgeClass =
+        (cat.indexOf('strong') >= 0) ? 'strong' :
+        (cat.indexOf('moderate') >= 0) ? 'moderate' :
+        (cat.indexOf('weak') >= 0) ? 'weak' : 'poor';
+      badge.className = 'match-badge ' + badgeClass;
+      var badgeIcon =
+        (cat.indexOf('strong') >= 0) ? '\u2B50' :
+        (cat.indexOf('moderate') >= 0) ? '\u2728' :
+        (cat.indexOf('weak') >= 0) ? '\u26A1' : '\u26A0';
+      badge.textContent = badgeIcon + ' ' + (nlp.match_category || 'Unknown Match');
+
+      document.getElementById('nlpFinalScore').textContent = nlpScore;
+      document.getElementById('nlpSemanticScore').textContent = Math.round((nlp.semantic_score || 0) * 100);
+      document.getElementById('nlpRuleScore').textContent = Math.round((nlp.rule_score || 0) * 100);
+      document.getElementById('nlpSkillCoverage').textContent = Math.round((nlp.skill_coverage || 0) * 100);
+      document.getElementById('nlpExperience').textContent = (nlp.total_experience || 0).toFixed(1);
+
+      setTimeout(function() {
+        var sem = Math.round((nlp.semantic_score || 0) * 100);
+        var rule = Math.round((nlp.rule_score || 0) * 100);
+        var cov = Math.round((nlp.skill_coverage || 0) * 100);
+        document.getElementById('fillSemantic').style.width = sem + '%';
+        document.getElementById('barSemantic').textContent  = sem + '%';
+        document.getElementById('fillRule').style.width     = rule + '%';
+        document.getElementById('barRule').textContent      = rule + '%';
+        document.getElementById('fillCoverage').style.width = cov + '%';
+        document.getElementById('barCoverage').textContent  = cov + '%';
+      }, 300);
+
+      var matchedEl = document.getElementById('matchedSkills');
+      matchedEl.innerHTML = '';
+      var gap = nlp.skill_gap_analysis || {};
+      var matched = nlp.matched_required || gap.matched_skills || [];
+      matched.forEach(function(s) { matchedEl.appendChild(makeTag(s, 'matched')); });
+      if (!matched.length) matchedEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted)">No matched skills found</span>';
+
+      var missingEl = document.getElementById('missingSkills');
+      missingEl.innerHTML = '';
+      var missing = nlp.missing_required || gap.missing_skills || [];
+      missing.forEach(function(s) { missingEl.appendChild(makeTag(s, 'missing')); });
+      if (!missing.length) missingEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--success)">No missing skills!</span>';
+
+      var semMatches = nlp.semantic_skill_matches || {};
+      var semSection = document.getElementById('semanticMatchesSection');
+      var semEl = document.getElementById('semanticMatches');
+      semEl.innerHTML = '';
+      var semKeys = Object.keys(semMatches);
+      if (semKeys.length > 0) {
+        semSection.style.display = '';
+        semKeys.forEach(function(k) { semEl.appendChild(makeTag(k + ' \u2192 ' + semMatches[k], 'semantic')); });
+      } else {
+        semSection.style.display = 'none';
+      }
+
+      var insights = nlp.candidate_insights || {};
+      renderInsightList('strengthsList', insights.strengths || []);
+      renderInsightList('weaknessesList', insights.weaknesses || []);
+      renderInsightList('recommendationsList', insights.recommendations || []);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function makeTag(text, type) {
@@ -808,6 +942,8 @@
     // RESET
     function resetAll() {
       nlpScore = 0; cvData = {};
+      resultsArray = []; selectedCandidate = null;
+      selectedFiles = []; // Clear files
       if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
       clearInterval(timerInterval); stream = null;
       fileInput.value = '';
@@ -820,6 +956,9 @@
       document.getElementById('camStatus').classList.remove('show');
       document.getElementById('timerDisplay').classList.remove('show');
       document.getElementById('scoreFill').style.width = '0%';
+      document.getElementById('rankedResultsContainer').innerHTML = '';
+      document.getElementById('rankedResultsContainer').style.display = 'block';
+      document.getElementById('detailedAnalysis').style.display = 'none';
       ['fillSemantic','fillRule','fillCoverage'].forEach(function(id) {
         var el = document.getElementById(id); if (el) el.style.width = '0%';
       });

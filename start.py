@@ -1,7 +1,7 @@
 import sys
 import os
-sys.path.insert(0, '/app')
-os.chdir('/app')
+sys.path.insert(0, os.getcwd())
+os.chdir(os.getcwd())
 
 import uvicorn
 

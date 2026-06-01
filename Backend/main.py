@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -26,7 +30,7 @@ app.add_middleware(
 # Serve index.html at root
 @app.get("/")
 def serve_frontend():
-    return FileResponse("index.html")
+    return FileResponse(os.path.join(os.getcwd(), "index.html"))
 
 # Mount static files if you have CSS/JS files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -38,27 +42,35 @@ questions = [
     "What are your strengths?"
 ]
 
+from typing import List
+
 @app.post("/resume-scoring/")
 async def resume_endpoint(
-    resume: UploadFile = File(...),
+    resumes: List[UploadFile] = File(...),
     job_text: str = Form(...)
 ):
-    # Save resume
-    resume_path = os.path.join(UPLOAD_FOLDER, resume.filename)
+    resume_paths = []
+    print(f"DEBUG: Received {len(resumes)} resumes.", flush=True)
+    
+    for resume in resumes:
+        print(f"DEBUG: Processing file: {resume.filename}", flush=True)
+        # Save resume
+        resume_path = os.path.join(UPLOAD_FOLDER, resume.filename)
+        with open(resume_path, "wb") as buffer:
+            shutil.copyfileobj(resume.file, buffer)
+        resume_paths.append(resume_path)
 
-    with open(resume_path, "wb") as buffer:
-        shutil.copyfileobj(resume.file, buffer)
     question = random.choice(questions)
+    
     # NLP 
-    results = process_resumes(job_text, [resume_path])
+    results = process_resumes(job_text, resume_paths)
 
     if not results:
         return {"error": "Resume processing failed"}
 
-    nlp_result = results[0]
-    
+    # We return all results for the frontend to display in ranked order
     return {
-        "nlp_analysis": nlp_result,
+        "results": results,
         "question": question
     }
 

@@ -12,12 +12,14 @@ def process_resumes(job_text: str, resume_files: list):
     job_data = build_job_data(job_text)
     results = []
 
-    for file_path in resume_files:
+    for i, file_path in enumerate(resume_files):
+        print(f"DEBUG: Processing resume {i+1}/{len(resume_files)}: {file_path}", flush=True)
         try:
             resume_data = parse_resume(
                 file_path,
                 required_skills=job_data["required_skills"]
             )
+            print(f"DEBUG: Parsed {file_path} successfully.", flush=True)
 
             match_result = match_resume_to_job(job_data, resume_data)
             skill_gap = analyze_skill_gap(job_data, resume_data)
@@ -30,10 +32,11 @@ def process_resumes(job_text: str, resume_files: list):
                 "skill_gap_analysis": skill_gap,
                 "candidate_insights": insights
             })
+            print(f"DEBUG: Added {file_path} to results with score {match_result.get('final_score')}", flush=True)
 
         except Exception as e:
+            print(f"ERROR: Failed to process {file_path}: {str(e)}", flush=True)
             import traceback
-            print(f"Error processing {file_path}")
             traceback.print_exc()
 
     if not results:
