@@ -3,7 +3,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from NLP_Engine.skill_gap_analyzer import analyze_skill_gap
 from NLP_Engine.skill_synonyms import normalize_skills
 from NLP_Engine.skill_similarity import find_semantic_skill_matches
-from NLP_Engine.candidate_insights import generate_candidate_insights
+from NLP_Engine.explanation_engine import generate_candidate_insights
+from NLP_Engine.skill_extractor import classify_skills_by_section
+from NLP_Engine.evidence_mapper import extract_semantic_evidence
 
 # ----------------------------
 # LOAD MODEL (Singleton)
@@ -98,6 +100,10 @@ def match_resume_to_job(
         resume_skills,
         job_data["skill_weights"],
     )
+    
+    # 🆕 NEW: Classified Skills & Evidence Mapping
+    categorized_skills = classify_skills_by_section(resume_text, required_skills, semantic_skill_matches)
+    semantic_evidence = extract_semantic_evidence(job_text, resume_text)
     skill_gap = analyze_skill_gap(job_data, resume_data)
 
     
@@ -162,11 +168,17 @@ def match_resume_to_job(
         if mandatory_skills else 1
     )
     
-    candidate_insights = generate_candidate_insights({
-        "rule_score": rule_score,
-        "semantic_score": semantic_score,
-        "missing_required": missing_required
-    })
+    candidate_insights = generate_candidate_insights(
+        {
+            "semantic_score": semantic_score,
+            "total_experience": experience,
+            "rule_score": rule_score
+        },
+        {
+            "matched_skills": list(matched_required) if isinstance(matched_required, set) else matched_required,
+            "missing_skills": list(missing_required) if isinstance(missing_required, set) else missing_required
+        }
+    )
 
     return {
         "final_score": round(final_score, 4),
@@ -180,8 +192,13 @@ def match_resume_to_job(
         "skill_coverage": skill_coverage,
         "skill_gap_analysis": skill_gap,
         "semantic_skill_matches": semantic_skill_matches,
-        "candidate_insights": candidate_insights,
         "match_category": category,
+        "demonstrated_skills": categorized_skills["Demonstrated"],
+        "mentioned_only_skills": categorized_skills["Mentioned Only"],
+        "missing_skills": categorized_skills["Not Found"],
+        "semantic_evidence": semantic_evidence,
+        "candidate_insights": candidate_insights,
+        "skill_evidence": {**categorized_skills["Demonstrated"], **categorized_skills["Mentioned Only"]}, # For backward compatibility
         "explanation": {
             "semantic_contribution": round(semantic_weight * semantic_score, 4),
             "rule_contribution": round(rule_weight * rule_score, 4),

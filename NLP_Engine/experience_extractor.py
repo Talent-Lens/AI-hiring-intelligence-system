@@ -136,6 +136,59 @@ def calculate_total_experience(text):
 
     
 # --------------------------------------------------
+# SECTION EXTRACTION
+# --------------------------------------------------
+
+def split_resume_into_sections(text):
+    """
+    Splits resume text into logical sections based on common headers.
+    Returns a dict mapping section tag to text.
+    """
+    headers = [
+        ("EXPERIENCE", r"\b(WORK EXPERIENCE|EXPERIENCE|PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK HISTORY)\b"),
+        ("PROJECTS", r"\b(PROJECTS|PERSONAL PROJECTS|ACADEMIC PROJECTS|RELEVANT PROJECTS)\b"),
+        ("INTERNSHIP", r"\b(INTERNSHIP|INTERNSHIPS|VOLUNTEER)\b"),
+        ("RESEARCH", r"\b(RESEARCH|PUBLICATIONS|ACHIEVEMENTS|AWARDS|HONORS)\b"),
+        ("SKILLS", r"\b(SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|PROFICIENCIES)\b"),
+        ("CERTIFICATIONS", r"\b(CERTIFICATIONS|CERTIFICATES|COURSES|EDUCATION)\b"), # Education often contains certs
+        ("KEYWORDS", r"\b(KEYWORDS|TOOLS|TECHNOLOGIES)\b")
+    ]
+    
+    found_headers = []
+    for tag, pattern in headers:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            found_headers.append((m.start(), tag))
+            
+    found_headers.sort()
+    
+    sections = {}
+    if not found_headers:
+        sections["UNKNOWN"] = text
+        return sections
+        
+    # Before first header
+    if found_headers[0][0] > 0:
+        sections["HEADER"] = text[:found_headers[0][0]]
+        
+    # Between headers
+    for i in range(len(found_headers)):
+        start_idx = found_headers[i][0]
+        tag = found_headers[i][1]
+        
+        # If the tag is already in sections, we might want to append to it 
+        # (e.g. if there are multiple experience sections)
+        end_idx = found_headers[i+1][0] if i+1 < len(found_headers) else len(text)
+        content = text[start_idx:end_idx].strip()
+        
+        if tag in sections:
+            sections[tag] += "\n" + content
+        else:
+            sections[tag] = content
+            
+    return sections
+
+
+# --------------------------------------------------
 # SKILL-SPECIFIC EXPERIENCE
 # --------------------------------------------------
 

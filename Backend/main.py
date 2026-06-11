@@ -66,13 +66,22 @@ async def resume_endpoint(
     results = process_resumes(job_text, resume_paths)
 
     if not results:
+        print("DEBUG: No results from process_resumes", flush=True)
         return {"error": "Resume processing failed"}
+
+    print(f"DEBUG: Returning {len(results)} results.", flush=True)
+    if len(results) > 0:
+        res = results[0]
+        print(f"DEBUG: First result insights: {res.get('candidate_insights', {}).keys()}", flush=True)
+        print(f"DEBUG: First result strengths count: {len(res.get('candidate_insights', {}).get('strengths', []))}", flush=True)
 
     # We return all results for the frontend to display in ranked order
     return {
         "results": results,
-        "question": question
+        "question": question,
+        "version": "1.0.8"
     }
+
 
 @app.get("/analyze-camera/")
 def analyze_camera_endpoint():

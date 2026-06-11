@@ -153,9 +153,31 @@
     .skill-tag {
       font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.05em;
       padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
+      cursor: pointer; position: relative; transition: all 0.2s;
     }
+    .skill-tag:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .skill-tag.active { border-color: var(--accent); background: rgba(200,255,87,0.15) !important; }
+    
+    .evidence-popover {
+      display: none; position: absolute; top: calc(100% + 8px); left: 0;
+      width: 300px; padding: 16px; background: var(--surface2);
+      border: 1px solid var(--accent); border-radius: 12px;
+      font-family: var(--font-body); font-size: 0.8rem; color: var(--text);
+      line-height: 1.6; z-index: 1000; box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .evidence-popover::after {
+      content: ''; position: absolute; bottom: 100%; left: 20px;
+      border: 8px solid transparent; border-bottom-color: var(--accent);
+    }
+    .skill-tag.active .evidence-popover { display: block; animation: panel-in 0.25s ease-out; }
+    .evidence-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.05em; }
+    .semantic-badge { display: inline-block; background: rgba(87,200,255,0.15); color: var(--accent2); font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; border: 1px solid rgba(87,200,255,0.2); }
+    .evidence-text { font-style: italic; opacity: 0.9; }
+
     .skill-tag.matched { background: rgba(87,255,170,0.1); border: 1px solid rgba(87,255,170,0.25); color: var(--success); }
-    .skill-tag.missing { background: rgba(255,87,87,0.08); border: 1px solid rgba(255,87,87,0.2); color: var(--danger); }
+    .skill-tag.missing { background: rgba(255,87,87,0.08); border: 1px solid rgba(255,87,87,0.2); color: var(--danger); cursor: default; }
+    .skill-tag.missing:hover { transform: none; box-shadow: none; }
     .skill-tag.semantic { background: rgba(87,200,255,0.1); border: 1px solid rgba(87,200,255,0.25); color: var(--accent2); }
     .skill-tag .tag-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .skill-tag.matched .tag-dot { background: var(--success); }
@@ -219,6 +241,21 @@
     .error-notice.show { display: block; }
 
     .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+    /* Semantic Evidence Styles */
+    .sev-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-bottom: 12px;
+      position: relative; overflow: hidden;
+    }
+    .sev-item::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--accent2);
+    }
+    .sev-res { font-family: var(--font-body); font-style: italic; font-size: 0.85rem; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+    .sev-reason { font-family: var(--font-mono); font-size: 0.68rem; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+    .sev-req { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+    .sev-score { position: absolute; top: 12px; right: 16px; font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted); }
 
     .footer-hint { text-align: center; padding: 40px 0 60px; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
 
@@ -331,7 +368,8 @@
     <!-- STEP 2: NLP Results -->
     <div class="panel" id="panel-nlp">
       <div class="panel-tag">Step 02 / NLP Results</div>
-      <h2>Resume analysis complete</h2>
+      <h2>Resume analysis complete <span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">v1.2.0</span></h2>
+
       <p class="panel-desc">Here's how your resumes stack up against the job requirements, ranked by match score.</p>
 
       <div id="rankedResultsContainer"></div>
@@ -389,10 +427,15 @@
         </div>
       </div>
 
-      <!-- Skills -->
+      <!-- Skills & Evidence -->
       <div class="skills-section">
-        <h3>✅ Matched Skills</h3>
-        <div class="skill-tags" id="matchedSkills"></div>
+        <h3>✅ Demonstrated Skills <span style="font-weight:300;font-size:0.75rem;color:var(--muted)">(Found in Experience/Projects)</span></h3>
+        <div class="skill-tags" id="demonstratedSkills"></div>
+      </div>
+
+      <div class="skills-section">
+        <h3>📄 Mentioned Only <span style="font-weight:300;font-size:0.75rem;color:var(--muted)">(Found ONLY in Skills section)</span></h3>
+        <div class="skill-tags" id="mentionedSkills"></div>
       </div>
 
       <div class="skills-section">
@@ -400,9 +443,9 @@
         <div class="skill-tags" id="missingSkills"></div>
       </div>
 
-      <div id="semanticMatchesSection" class="skills-section" style="display:none">
-        <h3>〜 Semantic Matches <span style="font-weight:300;font-size:0.75rem;color:var(--muted)">(close but not exact)</span></h3>
-        <div class="skill-tags" id="semanticMatches"></div>
+      <div id="semanticEvidenceSection" class="skills-section" style="display:none">
+        <h3>🔍 Semantic Match Evidence</h3>
+        <div id="semanticEvidenceList"></div>
       </div>
 
       <!-- Insights -->
@@ -690,7 +733,12 @@
           return showError(err, 'Server returned invalid JSON. Check F12 console.');
         }
 
+        console.log('[HireVision] PARSED DATA:', d);
+        if (d.results && d.results.length > 0) {
+            console.log('[HireVision] FIRST RESULT INSIGHTS:', d.results[0].candidate_insights);
+        }
         if (d.error) return showError(err, d.error);
+
 
         renderNlpPanel(d);
         document.getElementById('questionText').textContent = d.question || 'Tell me about yourself.';
@@ -798,30 +846,53 @@
         document.getElementById('barCoverage').textContent  = cov + '%';
       }, 300);
 
-      var matchedEl = document.getElementById('matchedSkills');
-      matchedEl.innerHTML = '';
-      var gap = nlp.skill_gap_analysis || {};
-      var matched = nlp.matched_required || gap.matched_skills || [];
-      matched.forEach(function(s) { matchedEl.appendChild(makeTag(s, 'matched')); });
-      if (!matched.length) matchedEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted)">No matched skills found</span>';
+      // 1. Demonstrated Skills
+      var demoEl = document.getElementById('demonstratedSkills');
+      demoEl.innerHTML = '';
+      var demoSkills = nlp.demonstrated_skills || {};
+      Object.keys(demoSkills).forEach(function(s) { 
+        demoEl.appendChild(makeTag(s, 'matched', demoSkills[s])); 
+      });
+      if (!Object.keys(demoSkills).length) demoEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted)">No demonstrated skills detected in experience sections.</span>';
 
+      // 2. Mentioned Only Skills
+      var mentionedEl = document.getElementById('mentionedSkills');
+      mentionedEl.innerHTML = '';
+      var mentionedSkills = nlp.mentioned_only_skills || {};
+      Object.keys(mentionedSkills).forEach(function(s) { 
+        mentionedEl.appendChild(makeTag(s, 'semantic', mentionedSkills[s])); 
+      });
+      if (!Object.keys(mentionedSkills).length) mentionedEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted)">-</span>';
+
+      // 3. Missing Skills
       var missingEl = document.getElementById('missingSkills');
       missingEl.innerHTML = '';
-      var missing = nlp.missing_required || gap.missing_skills || [];
+      var missing = nlp.missing_skills || [];
       missing.forEach(function(s) { missingEl.appendChild(makeTag(s, 'missing')); });
       if (!missing.length) missingEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--success)">No missing skills!</span>';
 
-      var semMatches = nlp.semantic_skill_matches || {};
-      var semSection = document.getElementById('semanticMatchesSection');
-      var semEl = document.getElementById('semanticMatches');
-      semEl.innerHTML = '';
-      var semKeys = Object.keys(semMatches);
-      if (semKeys.length > 0) {
-        semSection.style.display = '';
-        semKeys.forEach(function(k) { semEl.appendChild(makeTag(k + ' \u2192 ' + semMatches[k], 'semantic')); });
+      // 4. Semantic Evidence mapping
+      var semSec = document.getElementById('semanticEvidenceSection');
+      var semList = document.getElementById('semanticEvidenceList');
+      semList.innerHTML = '';
+      var semEv = nlp.semantic_evidence || [];
+      if (semEv.length > 0) {
+        semSec.style.display = 'block';
+        semEv.forEach(function(ev) {
+          var item = document.createElement('div');
+          item.className = 'sev-item';
+          item.innerHTML = `
+            <div class="sev-score">${Math.round(ev.score * 100)}% Match</div>
+            <div class="sev-res">"${ev.resume_evidence}"</div>
+            <div class="sev-reason"><span>\u2728</span> ${ev.reason}</div>
+            <div class="sev-req">JD Requirement: ${ev.job_requirement}</div>
+          `;
+          semList.appendChild(item);
+        });
       } else {
-        semSection.style.display = 'none';
+        semSec.style.display = 'none';
       }
+
 
       var insights = nlp.candidate_insights || {};
       renderInsightList('strengthsList', insights.strengths || []);
@@ -830,10 +901,35 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function makeTag(text, type) {
+    function makeTag(text, type, evidenceText, semSource) {
       var el = document.createElement('div');
       el.className = 'skill-tag ' + type;
       el.innerHTML = '<div class="tag-dot"></div>' + text;
+      
+      if (!evidenceText && type !== 'missing') {
+        evidenceText = "Skill found in resume (under standardized tech keywords)";
+      }
+
+      if (evidenceText) {
+        var pop = document.createElement('div');
+        pop.className = 'evidence-popover';
+        
+        var semLabel = semSource ? `<div class="semantic-badge">Matched via similarity to: "${semSource}"</div>` : '';
+        
+        pop.innerHTML = `
+          <span class="evidence-label">Raw Evidence from Resume</span>
+          ${semLabel}
+          <div class="evidence-text">"${evidenceText}"</div>
+        `;
+        el.appendChild(pop);
+        
+        el.onclick = function(e) {
+          e.stopPropagation();
+          var wasActive = el.classList.contains('active');
+          document.querySelectorAll('.skill-tag').forEach(t => t.classList.remove('active'));
+          if (!wasActive) el.classList.add('active');
+        };
+      }
       return el;
     }
 
@@ -966,6 +1062,11 @@
     }
 
     function showError(el, msg) { el.textContent = '\u26A0 ' + msg; el.classList.add('show'); }
+
+    // Close popovers on outside click
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.skill-tag').forEach(t => t.classList.remove('active'));
+    });
   </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 def generate_candidate_insights(result, gap):
-
+    # DEBUG: VERSION 1.0.8
     strengths = []
     weaknesses = []
     recommendations = []
@@ -8,42 +8,35 @@ def generate_candidate_insights(result, gap):
     missing = gap.get("missing_skills", [])
     experience = result.get("total_experience", 0)
     semantic_score = result.get("semantic_score", 0)
+    rule_score = result.get("rule_score", 0)
+
+    # 1. Strengths
     if matched:
-        strengths.append(f"Matched skills: {', '.join(matched)}")
-    # Skill match insight
-    if len(matched) >= 4:
-        strengths.append("Strong match on required skills")
+        strengths.append(f"Strong match for tech: {', '.join(matched[:4])}")
+        if len(matched) >= 3:
+            strengths.append("Verified technical depth in core requirements")
 
-    elif len(matched) >= 2:
-        strengths.append("Moderate skill match")
+    if experience >= 3:
+        strengths.append(f"Solid tenure of {experience} years detected")
+    
+    if semantic_score > 0.5:
+        strengths.append("High context alignment with job description")
 
-    else:
-        weaknesses.append("Weak skill alignment")
-
-    # Missing skills
+    # 2. Weaknesses
     if missing:
-        weaknesses.append(f"Missing skills: {', '.join(missing)}")
-        recommendations.append(f"Improve skills in: {', '.join(missing)}")
+        weaknesses.append(f"Skill gaps identified: {', '.join(missing[:3])}")
+        recommendations.append(f"Recommended Upskill: {', '.join(missing)}")
+    
+    if experience < 2:
+        weaknesses.append(f"Candidate has lower experience than typical ({experience} years)")
 
-    # Experience insight
-    if experience >= 10:
-        strengths.append(f"High experience ({experience} years)")
+    if semantic_score < 0.4:
+        weaknesses.append("Contextual alignment could be improved")
 
-    elif experience >= 3:
-        strengths.append(f"Moderate experience ({experience} years)")
-
-    else:
-        weaknesses.append(f"Low experience ({experience} years)")
-
-    # Semantic similarity insight
-    if semantic_score > 0.6:
-        strengths.append("Strong semantic alignment with job description")
-
-    elif semantic_score > 0.4:
-        strengths.append("Moderate semantic similarity with job description")
-
-    else:
-        weaknesses.append("Low semantic similarity with job description")
+    # Final logic to ensure NOT EMPTY
+    if not strengths: strengths.append("Candidate demonstrates basic technical eligibility")
+    if not weaknesses and missing: weaknesses.append("Technical assessment recommended for gaps")
+    if not recommendations: recommendations.append("Proceed to next stage for further verification")
 
     return {
         "strengths": strengths,

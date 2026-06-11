@@ -16,7 +16,7 @@ SKILL_SYNONYMS = {
     "javascript":["js"],
     "typescript":["ts"],
     "node.js":["node","nodejs"],
-    "spring boot":["sklearn","scikit-learn"],
+    "spring boot":["spring"],
     "express":["express.js"],
     "scikit-learn":["sklearn","scikit learn"],
     "pytorch":["torch"],
@@ -26,7 +26,7 @@ SKILL_SYNONYMS = {
     "mysql": ["my sql"],
     
     "kubernetes": ["k8s"],
-    "tfl": ["tensorflow"],
+    "tensorflow": ["tfl", "tf"],
 
     
     "pandas": ["pd"],

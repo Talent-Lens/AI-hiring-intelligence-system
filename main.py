@@ -22,15 +22,13 @@ def process_resumes(job_text: str, resume_files: list):
             print(f"DEBUG: Parsed {file_path} successfully.", flush=True)
 
             match_result = match_resume_to_job(job_data, resume_data)
-            skill_gap = analyze_skill_gap(job_data, resume_data)
-            insights = generate_candidate_insights(match_result, skill_gap)
+            skill_gap = match_result.get("skill_gap_analysis", {})
+            insights = match_result.get("candidate_insights", {})
 
             results.append({
                 "filename": os.path.basename(file_path),
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
-                "skill_gap_analysis": skill_gap,
-                "candidate_insights": insights
             })
             print(f"DEBUG: Added {file_path} to results with score {match_result.get('final_score')}", flush=True)
 
