@@ -1,23 +1,21 @@
+# advanced_skill_extractor.py
 import re
+from NLP_Engine.skill_db import ALL_SKILLS
 
-TECH_PATTERN = r"\b[a-zA-Z0-9\-\+\.#]+\b"
+def extract_additional_skills(text: str, include_evidence: bool = False):
+    text_lower = text.lower()
+    skill_evidence = {}
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
 
-COMMON_TECH_TERMS = {
-    "pandas","numpy","scikit-learn","sklearn","tensorflow","keras",
-    "pytorch","transformers","bert","gpt","huggingface",
-    "docker","kubernetes","spark","hadoop","airflow",
-    "postgresql","mongodb","redis",
-    "linux","git","github","bash"
-}
+    for skill in ALL_SKILLS:
+        pattern = r"\b" + re.escape(skill) + r"\b"
+        if re.search(pattern, text_lower):
+            best_line = next(
+                (l for l in lines if re.search(pattern, l.lower())), skill
+            )
+            if include_evidence:
+                skill_evidence[skill] = best_line
+            else:
+                skill_evidence[skill] = True
 
-def extract_additional_skills(text):
-
-    tokens = re.findall(TECH_PATTERN, text.lower())
-
-    detected = set()
-
-    for token in tokens:
-        if token in COMMON_TECH_TERMS:
-            detected.add(token)
-
-    return detected
+    return skill_evidence if include_evidence else set(skill_evidence.keys())
