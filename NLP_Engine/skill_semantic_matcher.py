@@ -12,7 +12,7 @@ def get_skill_embedding(skill):
     if skill in skill_embedding_cache:
         return skill_embedding_cache[skill]
 
-    embedding = model.encode(skill, convert_to_tensor=False)
+    embedding = model.encode(skill, convert_to_tensor=False, show_progress_bar=False)
     skill_embedding_cache[skill] = embedding
 
     return embedding
