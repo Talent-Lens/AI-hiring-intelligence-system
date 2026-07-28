@@ -39,7 +39,18 @@ def process_resumes(job_text: str, resume_files: list):
     if not results:
         return []
 
-    # sort
+    # Sort candidates by final_score in descending order
     results.sort(key=lambda x: x["final_score"], reverse=True)
+
+    # Assign fair rank position, relative percentile, and fairness metrics
+    total_candidates = len(results)
+    for idx, candidate in enumerate(results):
+        candidate["rank"] = idx + 1
+        candidate["total_candidates"] = total_candidates
+        if total_candidates > 1:
+            # Fair relative percentile ranking
+            candidate["percentile"] = round(((total_candidates - idx) / total_candidates) * 100, 1)
+        else:
+            candidate["percentile"] = 100.0
 
     return results
