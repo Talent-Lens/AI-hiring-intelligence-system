@@ -2,209 +2,278 @@ import re
 from datetime import datetime
 
 
-def calculate_total_experience(text: str) -> float:
-    current_date = datetime.now()
+# =============================================================================
+# TOTAL EXPERIENCE EXTRACTION
+# =============================================================================
 
-    # -----------------------------------------------
-    # CLEAN
-    # -----------------------------------------------
-    text = re.sub(r'[\xa0\u00a0\u202f\u2009\u200b\u2002\u2003]', ' ', text)
-    text = re.sub(r'[–—−‐]', '-', text)
-    text = text.replace('\uf0b7', ' ').replace('●', ' ')
+def calculate_total_experience(text: str) -> dict:
+    """
+    Extracts total years of professional experience from resume text.
 
-    # Collapse spaced letters including mixed 1-2 char tokens
-    # Handles: "J A N U A R Y", "N OV E M B E R", "F E B R U A RY", "T R AV E L"
-    text = re.sub(
-        r'(?<![A-Za-z])(?:[A-Za-z]{1,2} ){2,}[A-Za-z]+(?![A-Za-z])',
-        lambda m: m.group(0).replace(' ', ''),
-        text
-    )
+    Returns a dict:
+        {"years": float, "source": "calculated" | "claimed" | "unknown"}
 
-    # Collapse spaced digits: "2 0 2 0" → "2020"
-    text = re.sub(
-        r'(?<!\d)(?:\d ){3}\d(?!\d)',
-        lambda m: m.group(0).replace(' ', ''),
-        text
-    )
+    Source meanings:
+        "calculated" — real date ranges found and summed (most reliable)
+        "claimed"    — only an explicit "X years experience" statement found
+        "unknown"    — nothing found; returns 0.5 as a safe fallback
+    """
 
-    # Fix any remaining broken month tokens e.g. "JANUA RY" → "JANUARY"
-    all_months = [
-        'january', 'february', 'march', 'april', 'may', 'june',
-        'july', 'august', 'september', 'october', 'november', 'december'
-    ]
-    for month in all_months:
-        for split in range(2, len(month) - 1):
-            broken = month[:split] + ' ' + month[split:]
-            text = text.replace(broken.upper(), month.upper())
-            text = text.replace(broken.title(), month.title())
-            text = text.replace(broken, month)
+    current_date  = datetime.now()
+    current_year  = current_date.year
+    current_month = current_date.month
 
-    text = re.sub(r'[ \t]+', ' ', text)
-    text = re.sub(r'\n+', '\n', text)
-    search_text = text.lower()
+    # ── Normalise dash variants ───────────────────────────────────────────────
+    text = (text
+            .replace("\u2013", "-")   # en-dash
+            .replace("\u2014", "-")   # em-dash
+            .replace("\u2212", "-"))  # minus sign
 
-    # -----------------------------------------------
-    # SECTION DETECTION
-    # -----------------------------------------------
-    WORK_HEADERS = {
-        'employment history', 'work experience', 'professional experience',
-        'experience', 'work history', 'career history', 'employment',
-        'positions held', 'job history', 'professional background',
-        # collapsed variants
-        'employmenthistory', 'workexperience', 'professionalexperience',
-        'workhistory', 'careerhistory', 'professionalbackground',
-        'positionsheld', 'jobhistory',
-    }
-    NON_WORK_HEADERS = {
-        'education', 'academic background', 'qualifications',
-        'courses', 'certifications', 'certification', 'training',
-        'licenses', 'accomplishments', 'achievements', 'awards',
-        'projects', 'volunteer experience', 'volunteering', 'references',
-        'languages', 'skills', 'hobbies', 'interests', 'profile',
-        'summary', 'objective', 'contact', 'details', 'links',
-        'publications', 'activities', 'additional information',
-        'professional development', 'extracurricular',
-        # collapsed variants
-        'academicbackground', 'volunteerexperience', 'additionalinformation',
-        'professionaldevelopment',
-    }
-
-    section_map = [(0, False)]
-    pos = 0
-    for line in search_text.split('\n'):
-        stripped = line.strip()
-        alpha_only = re.sub(r'[^a-z\s]', '', stripped).strip()
-        alpha_only = re.sub(r'\s+', ' ', alpha_only)
-        alpha_collapsed = alpha_only.replace(' ', '')
-
-        if alpha_only in WORK_HEADERS or alpha_collapsed in WORK_HEADERS:
-            section_map.append((pos, True))
-        elif alpha_only in NON_WORK_HEADERS or alpha_collapsed in NON_WORK_HEADERS:
-            section_map.append((pos, False))
-
-        pos += len(line) + 1
-
-    section_map.sort()
-
-    def is_work_section(idx: int) -> bool:
-        result = False
-        for p, is_work in section_map:
-            if p <= idx:
-                result = is_work
-            else:
-                break
-        return result
-
-    # -----------------------------------------------
-    # DATE PARSING
-    # -----------------------------------------------
-    month_pat = (
-        r'(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|'
-        r'jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|'
-        r'nov(?:ember)?|dec(?:ember)?)'
-    )
-    month_map = {
-        'jan': 1, 'january': 1, 'feb': 2, 'february': 2,
-        'mar': 3, 'march': 3, 'apr': 4, 'april': 4,
-        'may': 5, 'jun': 6, 'june': 6, 'jul': 7, 'july': 7,
-        'aug': 8, 'august': 8, 'sep': 9, 'september': 9,
-        'oct': 10, 'october': 10, 'nov': 11, 'november': 11,
-        'dec': 12, 'december': 12,
-    }
-
-    date_patterns = [
-        rf'(?:({month_pat})\s+)?(\d{{4}})\s*[-–/to]+\s*(?:({month_pat})\s+)?(present|\d{{4}})',
-        r'(\d{1,2})/(\d{4})\s*[-–]+\s*(\d{1,2})/(present|\d{4})',
-        r'\((\d{4})\s*[-–]\s*(present|\d{4})\)',
+    # =========================================================================
+    # 1. SECTION IDENTIFICATION — skip EDUCATION to avoid degree years
+    # =========================================================================
+    section_headers = [
+        ("EXP",      r"\b(WORK EXPERIENCE|PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK HISTORY|EXPERIENCE)\b"),
+        ("EDU",      r"\b(EDUCATION|ACADEMIC BACKGROUND|SCHOLASTIC|ACADEMIC QUALIFICATIONS)\b"),
+        ("PROJECTS", r"\b(PROJECTS|PERSONAL PROJECTS|ACADEMIC PROJECTS)\b"),
+        ("SKILLS",   r"\b(SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES)\b"),
+        ("SUMMARY",  r"\b(SUMMARY|OBJECTIVE|PROFILE|ABOUT ME|CAREER OBJECTIVE)\b"),
+        ("CERTS",    r"\b(CERTIFICATIONS?|CERTIFICATES?|TRAINING|COURSES?|LICENSES?)\b"),
     ]
 
-    all_periods = []
+    found_headers = []
+    for tag, pattern in section_headers:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            found_headers.append((m.start(), tag))
+    found_headers.sort()
 
-    for pattern in date_patterns:
-        for m in re.finditer(pattern, search_text, re.IGNORECASE):
+    segments = []
+    if not found_headers:
+        segments.append(("UNKNOWN", text))
+    else:
+        if found_headers[0][0] > 0:
+            segments.append(("HEADERLESS", text[:found_headers[0][0]]))
+        for i, (start_idx, tag) in enumerate(found_headers):
+            end_idx = found_headers[i + 1][0] if i + 1 < len(found_headers) else len(text)
+            segments.append((tag, text[start_idx:end_idx]))
+
+    # =========================================================================
+    # 2. DATE RANGE PATTERNS
+    # =========================================================================
+
+    # Building blocks
+    PRESENT_WORDS = (
+        r"(?:present|current|now|today"
+        r"|till\s+date|to\s+date"
+        r"|till\s+now|ongoing|continue[sd]?)"
+    )
+
+    month_word = (
+        r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?"
+        r"|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?"
+        r"|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+    )
+    month_num  = r"(?:0?[1-9]|1[0-2])"
+    year_4     = r"(?:19|20)\d{2}"       # strict — avoids matching random numbers
+
+    opt_month  = rf"(?:(?:{month_word}|{month_num})[/\-\.\s]{{0,3}})?"
+
+    # Separator: –, —, -, "to" (only when not "to date"), "till" (only when not "till date")
+    separator = r"(?:–|—|-|\bto(?!\s+date)\b|\btill(?!\s+date)\b)"
+
+    # Pattern A — explicit separator between two dates/present
+    # Captures: (start_year, end_year, present_flag)
+    main_pattern = (
+        rf"{opt_month}({year_4})"
+        rf"\s*{separator}\s*"
+        rf"(?:{opt_month}({year_4})|({PRESENT_WORDS}))"
+    )
+
+    # Pattern B — "YEAR till/to date" with no dash separator (common in Indian CVs)
+    # e.g. "Apr 2018 till date", "2018 to date"
+    present_only_pattern = (
+        rf"{opt_month}({year_4})\s+({PRESENT_WORDS})"
+    )
+
+    # Pattern C — apostrophe-prefixed 2-digit years: '12 to '16
+    apos_pattern = (
+        rf"'(\d{{2}})\s*(?:–|—|-|\bto\b|\btill\b)\s*"
+        rf"(?:'(\d{{2}})|({PRESENT_WORDS}))"
+    )
+
+    # =========================================================================
+    # 3. EXTRACT DATE RANGES
+    # =========================================================================
+    ranges = []
+
+    def add_range(start_y: int, end_y: int, end_m: int = None):
+        """Sanity-check and append a date range."""
+        if end_m is None:
+            end_m = current_month if end_y == current_year else 12
+        if not (1950 <= start_y <= current_year):
+            return
+        if not (1950 <= end_y <= current_year):
+            return
+        start_val = start_y * 12 + 1       # assume January start if no month given
+        end_val   = end_y * 12 + end_m
+        if start_val < end_val:
+            ranges.append((start_val, end_val))
+
+    for tag, seg_text in segments:
+        # Always skip education section — degree years cause false positives
+        if tag in ("EDU", "CERTS"):
+            continue
+
+        # Pattern A — main range with separator
+        for m in re.finditer(main_pattern, seg_text, re.IGNORECASE):
             try:
-                g = m.groups()
-                if len(g) == 2:
-                    sy, ey = g
-                    sm = 1
-                    start_year = int(sy)
-                    if str(ey).lower() == 'present':
-                        end_year, em = current_date.year, current_date.month
-                    else:
-                        end_year, em = int(ey), 12
-                elif g[0] and str(g[0]).isdigit():
-                    sm_s, sy, em_s, ey = g
-                    sm, start_year = int(sm_s), int(sy)
-                    if ey.lower() == 'present':
-                        end_year, em = current_date.year, current_date.month
-                    else:
-                        end_year, em = int(ey), int(em_s)
-                else:
-                    smon, sy, emon, ey = g
-                    start_year = int(sy)
-                    sm = month_map.get((smon or '').lower(), 1)
-                    if ey.lower() == 'present':
-                        end_year, em = current_date.year, current_date.month
-                    else:
-                        end_year = int(ey)
-                        em = month_map.get((emon or '').lower(), 12)
-
-                if not (1950 <= start_year <= current_date.year):
-                    continue
-                if not (1950 <= end_year <= current_date.year + 1):
-                    continue
-
-                start_date = datetime(start_year, sm, 1)
-                end_date = datetime(end_year, em, 1)
-
-                if end_date > start_date:
-                    all_periods.append((start_date, end_date, m.start()))
-            except:
+                start_y = int(m.group(1))
+                end_y   = current_year if m.group(3) else int(m.group(2))
+                end_m   = current_month if m.group(3) else None
+                add_range(start_y, end_y, end_m)
+            except Exception:
                 continue
 
-    # -----------------------------------------------
-    # FILTER: work section only
-    # -----------------------------------------------
-    work_periods = [
-        (s, e) for s, e, idx in all_periods
-        if is_work_section(idx)
+        # Pattern B — "YEAR till/to date" (no dash)
+        for m in re.finditer(present_only_pattern, seg_text, re.IGNORECASE):
+            try:
+                start_y = int(m.group(1))
+                add_range(start_y, current_year, current_month)
+            except Exception:
+                continue
+
+        # Pattern C — apostrophe years '12 to '16
+        for m in re.finditer(apos_pattern, seg_text, re.IGNORECASE):
+            try:
+                start_y = 2000 + int(m.group(1))
+                end_y   = current_year if m.group(3) else 2000 + int(m.group(2))
+                end_m   = current_month if m.group(3) else None
+                add_range(start_y, end_y, end_m)
+            except Exception:
+                continue
+
+    # =========================================================================
+    # 4. EXPLICIT "X YEARS EXPERIENCE" FALLBACK
+    # =========================================================================
+    explicit_val = 0.0
+    explicit_match = re.search(
+        r"(\d+(?:\.\d+)?)\+?\s*years?\s*(?:of\s*)?(?:relevant\s*|professional\s*)?experience",
+        text,
+        re.IGNORECASE,
+    )
+    if explicit_match:
+        try:
+            explicit_val = float(explicit_match.group(1))
+        except Exception:
+            pass
+
+    # =========================================================================
+    # 5. IF NO DATE RANGES FOUND — use explicit claim or unknown fallback
+    # =========================================================================
+    if not ranges:
+        if explicit_val > 0:
+            return {"years": round(explicit_val, 1), "source": "claimed"}
+        return {"years": 0.5, "source": "unknown"}
+
+    # =========================================================================
+    # 6. MERGE OVERLAPPING RANGES & SUM
+    # =========================================================================
+    ranges.sort()
+    total_months = 0
+    curr_s, curr_e = ranges[0]
+    for next_s, next_e in ranges[1:]:
+        if next_s <= curr_e:                    # overlapping — extend current
+            curr_e = max(curr_e, next_e)
+        else:                                   # gap — commit current, start new
+            total_months += (curr_e - curr_s)
+            curr_s, curr_e = next_s, next_e
+    total_months += (curr_e - curr_s)
+
+    calculated_val = round(total_months / 12.0, 1)
+
+    if calculated_val > 0:
+        return {"years": calculated_val, "source": "calculated"}
+
+    if explicit_val > 0:
+        return {"years": round(explicit_val, 1), "source": "claimed"}
+
+    return {"years": 0.5, "source": "unknown"}
+
+
+# =============================================================================
+# SECTION EXTRACTION (used by resume_parser.py)
+# =============================================================================
+
+def split_resume_into_sections(text: str) -> dict:
+    """
+    Splits resume text into logical sections based on common section headers.
+    Returns a dict mapping section tag → text content.
+    """
+    headers = [
+        ("EXPERIENCE",     r"\b(WORK EXPERIENCE|EXPERIENCE|PROFESSIONAL EXPERIENCE|EMPLOYMENT HISTORY|WORK HISTORY|CAREER HISTORY)\b"),
+        ("PROJECTS",       r"\b(PROJECTS|PERSONAL PROJECTS|ACADEMIC PROJECTS|RELEVANT PROJECTS|KEY PROJECTS)\b"),
+        ("INTERNSHIP",     r"\b(INTERNSHIP|INTERNSHIPS|TRAINEE|VOLUNTEER|VOLUNTEERING)\b"),
+        ("RESEARCH",       r"\b(RESEARCH|PUBLICATIONS|ACHIEVEMENTS|AWARDS|HONORS|HONOURS|ACCOMPLISHMENTS)\b"),
+        ("SKILLS",         r"\b(SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|KEY COMPETENCIES|PROFICIENCIES|AREAS OF EXPERTISE)\b"),
+        ("CERTIFICATIONS", r"\b(CERTIFICATIONS?|CERTIFICATES?|COURSES?|EDUCATION|TRAINING|LICENSES?|QUALIFICATIONS?)\b"),
+        ("SUMMARY",        r"\b(SUMMARY|OBJECTIVE|PROFILE|ABOUT ME|CAREER OBJECTIVE|PROFESSIONAL SUMMARY|PERSONAL STATEMENT)\b"),
+        ("KEYWORDS",       r"\b(KEYWORDS|TOOLS|TECHNOLOGIES|TECH STACK)\b"),
     ]
 
-    # -----------------------------------------------
-    # FALLBACK: no section headers detected
-    # -----------------------------------------------
-    if not work_periods:
-        edu_keywords = {
-            'university', 'college', 'bachelor', 'master', 'degree',
-            'diploma', 'mba', 'phd', 'certificate', 'certified',
-            'school of', 'institute of',
-        }
-        for s, e, idx in all_periods:
-            ctx = search_text[max(0, idx - 250): idx + 100]
-            if not any(kw in ctx for kw in edu_keywords):
-                work_periods.append((s, e))
+    found_headers = []
+    for tag, pattern in headers:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            found_headers.append((m.start(), tag))
+    found_headers.sort()
 
-    if not work_periods:
-        return 0.1
+    sections = {}
 
-    # -----------------------------------------------
-    # MERGE OVERLAPS
-    # -----------------------------------------------
-    work_periods.sort()
-    merged = [work_periods[0]]
-    for cur in work_periods[1:]:
-        last = merged[-1]
-        if cur[0] <= last[1]:
-            merged[-1] = (last[0], max(last[1], cur[1]))
+    if not found_headers:
+        sections["UNKNOWN"] = text
+        return sections
+
+    if found_headers[0][0] > 0:
+        sections["HEADER"] = text[:found_headers[0][0]]
+
+    for i, (start_idx, tag) in enumerate(found_headers):
+        end_idx = found_headers[i + 1][0] if i + 1 < len(found_headers) else len(text)
+        content = text[start_idx:end_idx].strip()
+        if tag in sections:
+            sections[tag] += "\n" + content
         else:
-            merged.append(cur)
+            sections[tag] = content
 
-    # -----------------------------------------------
-    # CALCULATE
-    # -----------------------------------------------
-    total_months = sum(
-        (p[1].year - p[0].year) * 12 + (p[1].month - p[0].month)
-        for p in merged
+    return sections
+
+
+# =============================================================================
+# REQUIRED EXPERIENCE (used by job_parser.py and matcher.py)
+# =============================================================================
+
+def extract_required_experience(job_text: str) -> dict:
+    """
+    Pulls the minimum years of experience required from a job description.
+
+    Returns a dict:
+        {"years": int, "source": "stated" | "default"}
+
+    "stated" — the JD explicitly mentions a years-of-experience requirement.
+    "default" — nothing was found; falls back to 3 (safe mid-level assumption)
+    """
+    word_to_num = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
+    }
+    
+    # Regex matching digit or word number, and allowing descriptive terms like "software engineering" between years and experience
+    match = re.search(
+        r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\+?\s*(?:to\s*\d+)?\s*years?\s*(?:of\s*)?(?:\s*[a-zA-Z\s\-]{0,25})?\s*experience",
+        job_text,
+        re.IGNORECASE
     )
-    total_years = round(total_months / 12, 1)
-    return min(max(total_years, 0.1), 40.0)
+    if match:
+        val = match.group(1).lower()
+        years = int(val) if val.isdigit() else word_to_num.get(val, 3)
+        return {"years": years, "source": "stated"}
+        
+    return {"years": 3, "source": "default"}
