@@ -1,4 +1,5 @@
 import os
+import re
 
 from NLP_Engine.job_parser import build_job_data
 from NLP_Engine.parsers.resume_parser import parse_resume
