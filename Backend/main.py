@@ -31,10 +31,14 @@ app.add_middleware(
     allow_headers=["*","ngrok-skip-browser-warning"],
 )
 
-# Serve index.html at root
+# Serve index.html at root with no-cache headers to prevent browser caching
 @app.get("/")
 def serve_frontend():
-    return FileResponse("index.html")
+    return FileResponse("index.html", headers={
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    })
 
 # Mount static files
 os.makedirs("static", exist_ok=True)
