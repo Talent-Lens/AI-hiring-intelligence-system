@@ -13,6 +13,7 @@ def process_resumes(job_text: str, resume_files: list):
     job_data = build_job_data(job_text)
     results = []
 
+    print(f"[NLP Engine] Processing {len(resume_files)} resume file(s)...")
     for file_path in resume_files:
         try:
             resume_data = parse_resume(

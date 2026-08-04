@@ -773,8 +773,9 @@
     });
 
     function handleFileSelect(files) {
-      for (let i = 0; i < files.length; i++) {
-        let f = files[i];
+      const list = Array.from(files);
+      for (let i = 0; i < list.length; i++) {
+        let f = list[i];
         if (!accumulatedFiles.some(existing => existing.name === f.name && existing.size === f.size)) {
           accumulatedFiles.push(f);
         }

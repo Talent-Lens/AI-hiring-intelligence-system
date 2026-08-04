@@ -56,14 +56,21 @@ async def resume_endpoint(request: Request):
     if isinstance(job_text, UploadFile):
         job_text = ""
 
-    # Extract all uploaded file objects from form
-    upload_list = form.getlist("resumes") or form.getlist("resume")
-    if not upload_list:
-        upload_list = [v for k, v in form.multi_items() if hasattr(v, "filename") and getattr(v, "filename", None)]
+    # Extract all uploaded file objects from form across all keys
+    raw_files = [v for k, v in form.multi_items() if hasattr(v, "filename") and getattr(v, "filename", None)]
+    
+    # Deduplicate UploadFile objects by instance identity
+    upload_list = []
+    seen_ids = set()
+    for f_obj in raw_files:
+        if id(f_obj) not in seen_ids:
+            seen_ids.add(id(f_obj))
+            upload_list.append(f_obj)
 
     if not upload_list:
         return {"error": "No resume files uploaded. Please select at least one PDF, DOCX, or TXT file."}
 
+    print(f"[Backend] Received {len(upload_list)} uploaded file(s).")
     saved_paths = []
     for idx, file_item in enumerate(upload_list):
         raw_name = getattr(file_item, "filename", None) or f"resume_{idx+1}.pdf"
@@ -71,14 +78,17 @@ async def resume_endpoint(request: Request):
         safe_name = f"{idx+1}_{base_name}"
         resume_path = os.path.join(UPLOAD_FOLDER, safe_name)
 
-        # Ensure stream is positioned at start before saving
-        if hasattr(file_item, "seek"):
-            await file_item.seek(0)
-        elif hasattr(file_item.file, "seek"):
-            file_item.file.seek(0)
+        # Read file byte contents
+        file_bytes = await file_item.read()
+        if not file_bytes:
+            if hasattr(file_item.file, "seek"):
+                file_item.file.seek(0)
+            file_bytes = file_item.file.read()
 
-        with open(resume_path, "wb") as buffer:
-            shutil.copyfileobj(file_item.file, buffer)
+        with open(resume_path, "wb") as f:
+            f.write(file_bytes)
+            
+        print(f"[Backend Upload] Saved {safe_name} ({len(file_bytes)} bytes)")
         saved_paths.append(resume_path)
 
     if not saved_paths:
