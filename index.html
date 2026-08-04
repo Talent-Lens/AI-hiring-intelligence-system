@@ -769,6 +769,7 @@
       if (fileInput.files && fileInput.files.length > 0) {
         handleFileSelect(fileInput.files);
       }
+      fileInput.value = '';
     });
 
     function handleFileSelect(files) {
@@ -860,7 +861,6 @@
       var fd = new FormData();
       for (var i = 0; i < filesToUpload.length; i++) {
         fd.append('resumes', filesToUpload[i]);
-        fd.append('resume', filesToUpload[i]); // fallback key
       }
       fd.append('job_text', job);
 
