@@ -48,6 +48,8 @@ questions = [
 ]
 
 @app.post("/resume-scoring/")
+@app.post("/process/")
+@app.post("/process")
 async def resume_endpoint(request: Request):
     form = await request.form()
     job_text = form.get("job_text", "")
