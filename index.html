@@ -282,7 +282,7 @@
       <div class="nav-url">
         <div class="url-dot" id="urlDot"></div>
         <input type="text" id="backendUrl"
-          placeholder="Paste your ngrok URL here…"
+          placeholder="Auto-connected (or enter custom API URL)…"
           autocomplete="off" spellcheck="false"
           onkeydown="if(event.key==='Enter') ping()"/>
       </div>
@@ -606,7 +606,7 @@
       </div>
     </div>
 
-    <div class="footer-hint">Paste your ngrok URL in the bar above to begin</div>
+    <div class="footer-hint">Auto-connected to backend • HireVision AI Intelligence</div>
   </div>
 
   <!-- EXECUTIVE CANDIDATE REPORT PRINT MODAL -->
@@ -709,34 +709,44 @@
       if (e) { e.textContent = '\u26A0 Async Error: ' + event.reason; e.classList.add('show'); }
     };
 
-    let BASE = '';
+    let BASE = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file://'))
+      ? window.location.origin
+      : 'http://localhost:8000';
     const NGROK_H = { 'ngrok-skip-browser-warning': '1' };
     let nlpScore = 0, cvData = {}, stream = null, timerInterval = null;
 
+    // Auto-connect to current origin on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('backendUrl');
+      if (input && !input.value.trim()) {
+        input.value = BASE;
+      }
+      ping();
+    });
+
     // CONNECT
     async function ping() {
-      const val = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+      let val = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+      if (!val) {
+        val = BASE;
+        document.getElementById('backendUrl').value = val;
+      }
       const dot = document.getElementById('urlDot');
-      if (!val) { dot.className = 'url-dot bad'; return; }
-      // Basic URL validation — must start with http
       if (!val.startsWith('http://') && !val.startsWith('https://')) {
         dot.className = 'url-dot bad';
         alert('URL must start with http:// or https://');
         return;
       }
       dot.className = 'url-dot';
-      // Set BASE immediately from the input — don't wait for /docs fetch
       BASE = val;
       dot.className = 'url-dot ok';
       console.log('[HireVision] BASE set to:', BASE);
-      // Optionally verify in background (non-blocking)
       try {
         const ctrl = new AbortController();
         setTimeout(() => ctrl.abort(), 5000);
         const r = await fetch(val + '/docs', { headers: NGROK_H, signal: ctrl.signal });
         console.log('[HireVision] /docs ping status:', r.status);
       } catch(e) {
-        // Don't clear BASE — ngrok /docs may redirect or 404, backend can still work
         console.warn('[HireVision] /docs ping failed (non-fatal):', e.message);
       }
     }
@@ -831,13 +841,13 @@
       var err = document.getElementById('step1Error');
       err.classList.remove('show');
 
-      // Always read URL fresh from input
+      // Always read URL fresh from input, fallback to current origin
       const inputVal = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
       if (inputVal.startsWith('http')) {
         BASE = inputVal;
-      }
-      if (!BASE || !BASE.startsWith('http')) {
-        return showError(err, 'Please paste your backend/ngrok URL in the bar above first.');
+      } else if (!BASE || !BASE.startsWith('http')) {
+        BASE = (window.location.origin && !window.location.origin.startsWith('file://')) ? window.location.origin : 'http://localhost:8000';
+        document.getElementById('backendUrl').value = BASE;
       }
       console.log('[HireVision] Using BASE:', BASE);
       if (!filesToUpload || filesToUpload.length === 0) return showError(err, 'Please select or drag at least one resume file.');
