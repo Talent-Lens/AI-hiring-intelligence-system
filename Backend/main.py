@@ -54,22 +54,27 @@ async def resume_endpoint(request: Request):
     if isinstance(job_text, UploadFile):
         job_text = ""
 
-    # Extract all uploaded file objects from multipart form
-    upload_list = []
-    seen_filenames = set()
-    for key, value in form.multi_items():
-        if hasattr(value, "filename") and getattr(value, "filename", None):
-            fname = value.filename
-            if fname not in seen_filenames:
-                seen_filenames.add(fname)
-                upload_list.append(value)
+    # Extract all uploaded file objects from form
+    upload_list = form.getlist("resumes") or form.getlist("resume")
+    if not upload_list:
+        upload_list = [v for k, v in form.multi_items() if hasattr(v, "filename") and getattr(v, "filename", None)]
 
     if not upload_list:
         return {"error": "No resume files uploaded. Please select at least one PDF, DOCX, or TXT file."}
 
     saved_paths = []
-    for file_item in upload_list:
-        resume_path = os.path.join(UPLOAD_FOLDER, file_item.filename)
+    for idx, file_item in enumerate(upload_list):
+        raw_name = getattr(file_item, "filename", None) or f"resume_{idx+1}.pdf"
+        base_name = os.path.basename(raw_name)
+        safe_name = f"{idx+1}_{base_name}"
+        resume_path = os.path.join(UPLOAD_FOLDER, safe_name)
+
+        # Ensure stream is positioned at start before saving
+        if hasattr(file_item, "seek"):
+            await file_item.seek(0)
+        elif hasattr(file_item.file, "seek"):
+            file_item.file.seek(0)
+
         with open(resume_path, "wb") as buffer:
             shutil.copyfileobj(file_item.file, buffer)
         saved_paths.append(resume_path)

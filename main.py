@@ -23,8 +23,9 @@ def process_resumes(job_text: str, resume_files: list):
             skill_gap = analyze_skill_gap(job_data, resume_data)
             insights = generate_candidate_insights(match_result, skill_gap)
 
+            clean_filename = re.sub(r'^\d+_', '', os.path.basename(file_path))
             results.append({
-                "filename": os.path.basename(file_path),
+                "filename": clean_filename,
                 **match_result,
                 "total_experience": resume_data.get("total_experience", 0),
                 "skill_gap_analysis": skill_gap,
