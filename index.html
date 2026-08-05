@@ -282,6 +282,7 @@
       <div class="nav-url">
         <div class="url-dot" id="urlDot"></div>
         <input type="text" id="backendUrl"
+          value="http://127.0.0.1:8001"
           placeholder="Paste your ngrok URL here…"
           autocomplete="off" spellcheck="false"
           onkeydown="if(event.key==='Enter') ping()"/>
@@ -752,6 +753,8 @@
         console.warn('[HireVision] /docs ping failed (non-fatal):', e.message);
       }
     }
+
+    window.addEventListener('DOMContentLoaded', ping);
 
     // FILE DROP & ACCUMULATED FILES LIST
     const fileDrop = document.getElementById('fileDrop');
