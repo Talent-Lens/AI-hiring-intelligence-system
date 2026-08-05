@@ -622,7 +622,7 @@
       </div>
     </div>
 
-    <div class="footer-hint">Paste your ngrok URL in the bar above to begin</div>
+    <div class="footer-hint">Auto-connected to backend. Paste custom URL above if using ngrok.</div>
   </div>
 
   <!-- EXECUTIVE CANDIDATE REPORT PRINT MODAL -->
@@ -729,31 +729,30 @@
     const NGROK_H = { 'ngrok-skip-browser-warning': '1' };
     let nlpScore = 0, cvData = {}, stream = null, timerInterval = null;
 
+        function getApiBase() {
+      const el = document.getElementById('backendUrl');
+      const val = el ? el.value.trim().replace(/\/$/, '') : '';
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        return val;
+      }
+      if (window.location.origin && window.location.origin.startsWith('http')) {
+        return window.location.origin;
+      }
+      return 'http://127.0.0.1:8000';
+    }
+
     // CONNECT
     async function ping() {
-      const val = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
       const dot = document.getElementById('urlDot');
-      if (!val) { dot.className = 'url-dot bad'; return; }
-      // Basic URL validation — must start with http
-      if (!val.startsWith('http://') && !val.startsWith('https://')) {
-        dot.className = 'url-dot bad';
-        alert('URL must start with http:// or https://');
-        return;
-      }
-      dot.className = 'url-dot';
-      // Set BASE immediately from the input — don't wait for /docs fetch
-      BASE = val;
-      dot.className = 'url-dot ok';
+      BASE = getApiBase();
+      if (dot) dot.className = 'url-dot ok';
       console.log('[HireVision] BASE set to:', BASE);
-      // Optionally verify in background (non-blocking)
       try {
         const ctrl = new AbortController();
-        setTimeout(() => ctrl.abort(), 5000);
-        const r = await fetch(val + '/docs', { headers: NGROK_H, signal: ctrl.signal });
-        console.log('[HireVision] /docs ping status:', r.status);
+        setTimeout(() => ctrl.abort(), 4000);
+        await fetch(BASE + '/docs', { headers: NGROK_H, signal: ctrl.signal });
       } catch(e) {
-        // Don't clear BASE — ngrok /docs may redirect or 404, backend can still work
-        console.warn('[HireVision] /docs ping failed (non-fatal):', e.message);
+        console.warn('[HireVision] /docs ping notice:', e.message);
       }
     }
 
@@ -849,14 +848,7 @@
       var err = document.getElementById('step1Error');
       err.classList.remove('show');
 
-      // Always read URL fresh from input
-      const inputVal = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (inputVal.startsWith('http')) {
-        BASE = inputVal;
-      }
-      if (!BASE || !BASE.startsWith('http')) {
-        return showError(err, 'Please paste your backend/ngrok URL in the bar above first.');
-      }
+      BASE = getApiBase();
       console.log('[HireVision] Using BASE:', BASE);
       if (!filesToUpload || filesToUpload.length === 0) return showError(err, 'Please select or drag at least one resume file.');
       if (!job) return showError(err, 'Please paste the job description.');
@@ -1183,8 +1175,7 @@
       var qText = document.getElementById('questionText').textContent || 'Technical Interview Question';
       var nlpNorm = (nlpScore > 1.0) ? (nlpScore / 100.0) : nlpScore;
 
-      const _url = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (_url.startsWith('http')) BASE = _url;
+      BASE = getApiBase();
 
       try {
         var formData = new FormData();
@@ -1298,8 +1289,7 @@
     async function startRecording() {
       var err = document.getElementById('step2Error');
       err.classList.remove('show');
-      const _url = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
-      if (_url.startsWith('http')) BASE = _url;
+      BASE = getApiBase();
 
       document.getElementById('recordBtn').style.display = 'none';
       document.getElementById('finishEarlyBtn').style.display = 'inline-flex';
