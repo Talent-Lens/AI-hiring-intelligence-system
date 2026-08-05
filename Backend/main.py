@@ -137,8 +137,9 @@ async def analyze_video_interview_endpoint(request: Request):
     # 1. Computer Vision Camera Gaze & Posture Analysis
     cv_results = analyze_camera(duration=duration, show_preview=False)
 
-    # 2. Speech-to-Text Transcription via Whisper engine
-    if spoken_text and len(str(spoken_text).strip()) > 0:
+    # 2. Speech-to-Text Transcription via Whisper engine with live browser fallback
+    is_written_mode = bool(spoken_text and len(str(spoken_text).strip()) > 0 and audio_file is None)
+    if is_written_mode:
         words = str(spoken_text).strip().split()
         stt_results = {
             "transcript": str(spoken_text).strip(),
@@ -147,18 +148,16 @@ async def analyze_video_interview_endpoint(request: Request):
             "pace_rating": "Written Candidate Response",
             "transcription_accuracy": 100.0
         }
-    else:
-        stt_results = transcribe_audio_file(audio_path)
-
-    # If written answer mode, default visual confidence to neutral 85% instead of 0%
-    if spoken_text:
         cv_results["confidence_score"] = 85.0
+    else:
+        stt_results = transcribe_audio_file(audio_path, fallback_text=spoken_text)
+        if spoken_text:
+            cv_results["confidence_score"] = 85.0
 
     # 3. Evaluate Spoken/Written Answer against Technical Question
     answer_eval = evaluate_spoken_answer(question_text, stt_results["transcript"])
 
     is_written_mode = bool(spoken_text and len(str(spoken_text).strip()) > 0)
-
     # 4. Aggregate Multi-Factor Signals (Resume + Spoken Answer + CV Visual)
     multifactor = calculate_multifactor_verdict(
         resume_nlp_score=resume_score,
