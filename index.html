@@ -860,7 +860,6 @@
       var fd = new FormData();
       for (var i = 0; i < filesToUpload.length; i++) {
         fd.append('resumes', filesToUpload[i]);
-        fd.append('resume', filesToUpload[i]); // fallback key
       }
       fd.append('job_text', job);
 

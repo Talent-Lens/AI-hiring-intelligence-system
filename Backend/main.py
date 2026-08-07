@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 import shutil
 import os
 import random
+import hashlib
 from typing import List, Optional
 
 from CV_Engine.main import analyze_camera
@@ -63,12 +64,18 @@ async def resume_endpoint(request: Request):
     # Extract all uploaded file objects from form across all keys
     raw_files = [v for k, v in form.multi_items() if hasattr(v, "filename") and getattr(v, "filename", None)]
     
-    # Deduplicate UploadFile objects by instance identity
+    # Deduplicate UploadFile objects by filename and content hash
     upload_list = []
-    seen_ids = set()
+    seen_hashes = set()
     for f_obj in raw_files:
-        if id(f_obj) not in seen_ids:
-            seen_ids.add(id(f_obj))
+        filename = getattr(f_obj, "filename", None)
+        if not filename:
+            continue
+        file_bytes = await f_obj.read()
+        await f_obj.seek(0)
+        file_hash = (filename, hashlib.md5(file_bytes).hexdigest())
+        if file_hash not in seen_hashes:
+            seen_hashes.add(file_hash)
             upload_list.append(f_obj)
 
     if not upload_list:
