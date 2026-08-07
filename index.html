@@ -1182,6 +1182,8 @@
         formData.append('resume_score', String(nlpNorm));
         formData.append('question_text', qText);
         formData.append('spoken_text', txt);
+        formData.append('is_written', 'true');
+        formData.append('interview_mode', 'written');
 
         var res = await fetch(BASE + '/analyze-video-interview/', {
           method: 'POST',
@@ -1407,6 +1409,8 @@
         formData.append('duration', '15');
         formData.append('resume_score', String(nlpNorm));
         formData.append('question_text', qText);
+        formData.append('is_written', 'false');
+        formData.append('interview_mode', 'spoken');
 
         if (liveSpokenTranscript) {
           formData.append('spoken_text', liveSpokenTranscript);
